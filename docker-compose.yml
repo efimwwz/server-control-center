@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  server-control-center:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: server-control-center
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      # Set to 'mock' for standalone demo, or 'linux' for real VPS monitoring
+      - METRICS_PROVIDER=mock
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    # For live Ubuntu VPS host monitoring, uncomment the following volume mounts:
+    # volumes:
+    #   - /proc:/proc:ro
+    #   - /sys:/sys:ro
+    #   - /etc/os-release:/etc/os-release:ro
+    #   - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
