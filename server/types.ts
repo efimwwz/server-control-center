@@ -95,6 +95,8 @@ export interface NginxStats {
   status: 'active' | 'warning' | 'stopped';
   version: string;
   uptimeFormatted: string;
+  connectionStatsAvailable?: boolean;
+  connectionStatsError?: string | null;
   activeConnections: number;
   reading: number;
   writing: number;
@@ -134,6 +136,9 @@ export interface SystemService {
 
 export interface NetworkInterface {
   name: string;
+  displayName?: string;
+  dockerNetworkName?: string;
+  containerNames?: string[];
   type: 'ethernet' | 'bridge' | 'loopback' | 'virtual';
   state: 'UP' | 'DOWN';
   ipv4: string;
@@ -162,6 +167,74 @@ export interface NetworkOverview {
   packetLossPercent: number;
   latencyMs: number;
   pingTarget: string;
+}
+
+export type SecurityCheckStatus =
+  | 'pass'
+  | 'info'
+  | 'warning'
+  | 'critical'
+  | 'unknown';
+
+export interface SecurityCheck {
+  id: string;
+  label: string;
+  status: SecurityCheckStatus;
+  value: string;
+  details: string;
+}
+
+export interface FirewallFamilySecurity {
+  status: SecurityCheckStatus;
+  defaultPolicy: string;
+  baseChains: number;
+  inputRules: number;
+  dropRejectRules: number;
+  details: string;
+}
+
+export interface SecurityOverview {
+  status: 'protected' | 'warning' | 'critical' | 'unknown';
+  summary: string;
+  timestamp: string;
+  firewall: {
+    backend: string;
+    managers: string[];
+    ipv4: FirewallFamilySecurity;
+    ipv6: FirewallFamilySecurity;
+  };
+  fail2ban: {
+    status: SecurityCheckStatus;
+    serviceActive: boolean;
+    jailCount: number;
+    currentlyBanned: number;
+    jails: {
+      name: string;
+      currentlyBanned: number;
+      currentlyFailed: number;
+      totalBanned: number;
+    }[];
+    details: string;
+  };
+  ssh: {
+    available: boolean;
+    permitRootLogin: string | null;
+    passwordAuthentication: boolean | null;
+    pubkeyAuthentication: boolean | null;
+    permitEmptyPasswords: boolean | null;
+    maxAuthTries: number | null;
+    x11Forwarding: boolean | null;
+    details: string;
+  };
+  agent: {
+    apiReadOnly: boolean;
+    serviceUser: string;
+    noNewPrivileges: boolean | null;
+    privateTmp: boolean | null;
+    protectHome: boolean | null;
+    details: string;
+  };
+  checks: SecurityCheck[];
 }
 
 export interface LogEntry {

@@ -93,7 +93,7 @@ services:
               onChange={(e) => setTempName(e.target.value)}
               onBlur={() => onServerNameChange(tempName)}
               className="rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-1.5 font-mono text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none"
-              placeholder="e.g. vps-fra-01.ubuntu-prod"
+              placeholder="e.g. my-server"
             />
             <button
               onClick={() => onServerNameChange(tempName)}

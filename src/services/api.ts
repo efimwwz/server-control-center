@@ -6,10 +6,17 @@ import {
   NetworkOverview,
   LogEntry,
   AiAnalyzeResponse,
-  HealthStatus
+  HealthStatus,
+  SecurityOverview
 } from '../types';
 
 export const api = {
+  async getSecurity(): Promise<SecurityOverview> {
+    const res = await fetch('/api/security');
+    if (!res.ok) throw new Error(`Security data failed: ${res.statusText}`);
+    return res.json();
+  },
+
   async getHealth(): Promise<HealthStatus> {
     const res = await fetch('/api/health');
     if (!res.ok) throw new Error(`Health check failed: ${res.statusText}`);

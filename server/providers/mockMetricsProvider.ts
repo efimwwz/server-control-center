@@ -90,7 +90,7 @@ export class MockSystemMetricsProvider implements SystemMetricsProvider {
 
     return {
       info: {
-        hostname: 'vps-fra-01.ubuntu-prod',
+        hostname: 'example-vps.local',
         os: 'Ubuntu 24.04.1 LTS (Noble Numbat)',
         kernel: 'Linux 6.8.0-45-generic x86_64',
         uptimeSeconds: uptimeSec,
@@ -378,7 +378,7 @@ export class MockNetworkMetricsProvider implements NetworkMetricsProvider {
 
     return {
       publicIp: '185.196.220.142',
-      hostname: 'vps-fra-01.ubuntu-prod',
+      hostname: 'example-vps.local',
       defaultGateway: '185.196.220.1',
       dnsServers: ['1.1.1.1', '8.8.8.8', '1.0.0.1'],
       interfaces: [
@@ -504,8 +504,8 @@ export class MockLogsProvider implements LogsProvider {
       source: 'systemd',
       level: 'warning',
       service: 'fail2ban.service',
-      message: '[sshd] Ban 194.26.29.11 after 5 failed authentication attempts',
-      details: { jail: 'sshd', ip: '194.26.29.11' }
+      message: '[sshd] Ban 198.51.100.11 after 5 failed authentication attempts',
+      details: { jail: 'sshd', ip: '198.51.100.11' }
     },
     {
       id: 'log-8',
@@ -513,7 +513,7 @@ export class MockLogsProvider implements LogsProvider {
       source: 'nginx',
       level: 'error',
       service: 'nginx.service',
-      message: '[error] 1204#1204: *49120 SSL_do_handshake() failed (SSL: error:0A0000C1:SSL routines::no shared cipher) while SSL handshaking, client: 91.240.118.42',
+      message: '[error] 1204#1204: *49120 SSL_do_handshake() failed (SSL: error:0A0000C1:SSL routines::no shared cipher) while SSL handshaking, client: 203.0.113.42',
       details: { sslError: 'no shared cipher' }
     },
     {

@@ -70,11 +70,11 @@ export const NginxView: React.FC<NginxViewProps> = ({ nginx }) => {
 
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-2 text-right">
-            <div className="text-[11px] text-zinc-500">Total Traffic Served</div>
+            <div className="text-[11px] text-zinc-500">Traffic in Retained Logs</div>
             <div className="font-mono text-base font-bold text-white">{trafficGb} GB</div>
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-2 text-right">
-            <div className="text-[11px] text-zinc-500">Lifetime Requests</div>
+            <div className="text-[11px] text-zinc-500">Requests in Retained Logs</div>
             <div className="font-mono text-base font-bold text-cyan-400">
               {nginx.totalRequests.toLocaleString()}
             </div>
@@ -90,14 +90,32 @@ export const NginxView: React.FC<NginxViewProps> = ({ nginx }) => {
             <span>Active Connections</span>
             <Radio className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
           </div>
-          <div className="mt-2 font-mono text-3xl font-bold text-white">
-            {nginx.activeConnections}
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-zinc-800/60 pt-2 font-mono text-xs text-zinc-400">
-            <span>Reading: {nginx.reading}</span>
-            <span>Writing: {nginx.writing}</span>
-            <span>Waiting: {nginx.waiting}</span>
-          </div>
+          {nginx.connectionStatsAvailable === false ? (
+            <div className="mt-2">
+              <div className="font-mono text-2xl font-bold text-amber-400">
+                N/A
+              </div>
+              <div className="mt-3 border-t border-zinc-800/60 pt-2 text-xs text-amber-400">
+                Nginx connection statistics unavailable
+              </div>
+              {nginx.connectionStatsError && (
+                <div className="mt-1 break-words text-xs text-zinc-500">
+                  {nginx.connectionStatsError}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="mt-2 font-mono text-3xl font-bold text-white">
+                {nginx.activeConnections}
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-zinc-800/60 pt-2 font-mono text-xs text-zinc-400">
+                <span>Reading: {nginx.reading}</span>
+                <span>Writing: {nginx.writing}</span>
+                <span>Waiting: {nginx.waiting}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* 2xx Success */}

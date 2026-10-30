@@ -113,14 +113,27 @@ ${formattedContext}`
   const q = question.toLowerCase();
   let answer = '';
 
-  if (q.includes('cpu') || q.includes('процессор') || q.includes('загрузк')) {
+  if (/(сводк|обзор|общее состояние|состояние сервера|фактическ)/i.test(q)) {
+    answer = `### Сводка сервера: ${context.system.info.hostname}
+
+- ОС: ${context.system.info.os}; ядро ${context.system.info.kernel}
+- Uptime: ${context.system.info.uptimeFormatted}
+- CPU: ${context.system.cpu.usagePercent}%; RAM: ${context.system.ram.usagePercent}%
+- Диск: ${context.system.disk.usagePercent}%
+- Docker: ${context.docker.running}/${context.docker.total}; ошибок ${context.docker.error}
+- Nginx: ${context.nginx.status}; соединений ${context.nginx.activeConnections}
+- Сеть: ping ${context.network.latencyMs} ms; потери ${context.network.packetLossPercent}%
+- Служб: ${context.services.length}; предупреждений/ошибок в выборке логов: ${context.recentLogs.filter(l => l.level === 'warning' || l.level === 'error').length}
+
+Данные отражают полученный снимок и ограниченную выборку логов, а не всю историю сервера.`;
+  } else if (q.includes('cpu') || q.includes('процессор') || q.includes('загрузк')) {
     const topContainer = [...context.docker.containers].sort((a, b) => b.cpuPercent - a.cpuPercent)[0];
     answer = `### 📊 Анализ загрузки процессора (CPU)
 
 * **Текущая загрузка CPU:** **${context.system.cpu.usagePercent}%** (User: ${context.system.cpu.userPercent}%, System: ${context.system.cpu.systemPercent}%)
 * **Load Average:** **${context.system.loadAvg.load1m}**, **${context.system.loadAvg.load5m}**, **${context.system.loadAvg.load15m}** (на ${context.system.info.cpuCores} vCPU ядрах).
 * **Главный потребитель среди контейнеров:** \`${topContainer.name}\` (~${topContainer.cpuPercent}% CPU, ${topContainer.memoryFormatted}).
-* **Температура процессора:** ${context.system.cpu.temperatureC}°C (в пределах нормы).
+* **Температура процессора:** ${Number.isFinite(context.system.cpu.temperatureC) ? context.system.cpu.temperatureC + '°C' : 'недоступна (датчик не предоставил данные)'}.
 
 **Заключение:**
 ${
@@ -157,7 +170,7 @@ ${context.docker.containers
   * **5xx (Серверные ошибки):** ${context.nginx.statusCodeCounts.code5xx.toLocaleString()} (${errorRatio}%)
 
 **Диагностика:**
-Критических сбоев в Nginx не обнаружено. Ошибки 4xx преимущественно вызваны автоматическими бот-сканерами интернета, которые блокируются на уровне правил. Задержка отдачи прокси составляет в среднем ~4.2мс.`;
+Метрики отражают доступную выборку логов. По кодам ответов нельзя самостоятельно подтвердить атаку, успешную блокировку или отсутствие сбоев.`;
   } else if (q.includes('ошибк') || q.includes('лог') || q.includes('проблем')) {
     const errorLogs = context.recentLogs.filter((l) => l.level === 'error' || l.level === 'warning');
     answer = `### ⚠️ Анализ ошибок и предупреждений за последнее время
@@ -168,10 +181,8 @@ ${errorLogs
   .map((l) => `* **[${l.level.toUpperCase()}] [${l.service}]** ${l.message} *(время: ${new Date(l.timestamp).toLocaleTimeString()})*`)
   .join('\n')}
 
-**Анализ:**
-1. **SSL Handshake:** Внешний IP \`91.240.118.42\` пытался установить TLS соединение без общего шифра (вероятная попытка зондирования устаревшими протоколами TLS 1.0).
-2. **Fail2ban:** Успешно заблокировал атакующего \`194.26.29.11\` за перебор паролей по SSH.
-3. **Общее состояние:** Система изолирована, защитные механизмы сработали штатно.`;
+**Интерпретация:**
+Эти данные сами по себе не доказывают атаку или успешную блокировку.`;
   } else {
     answer = `### 🛡️ Сводка состояния сервера **${context.system.info.hostname}**
 
@@ -198,12 +209,12 @@ ${errorLogs
     modelUsed: 'Server Diagnostic Analyzer (Ubuntu Engine)',
     insights: [
       {
-        type: 'ok',
-        summary: `Сервер стабилен: Uptime ${context.system.info.uptimeFormatted}`
+        type: context.system.cpu.usagePercent >= 80 || context.system.ram.usagePercent >= 90 || context.docker.error > 0 || context.nginx.status === 'warning' ? 'warning' : 'ok',
+          summary: `CPU: ${context.system.cpu.usagePercent}%; RAM: ${context.system.ram.usagePercent}%; Docker: ${context.docker.running}/${context.docker.total}; Nginx: ${context.nginx.status}`
       },
       {
-        type: 'ok',
-        summary: `Сеть: ${context.network.latencyMs}ms к Cloudflare, 0% потерь`
+        type: context.network.packetLossPercent > 0 ? 'warning' : 'ok',
+          summary: `Сеть: ping ${context.network.latencyMs} ms; потери ${context.network.packetLossPercent}%`
       }
     ]
   };

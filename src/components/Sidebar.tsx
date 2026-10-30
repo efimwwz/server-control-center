@@ -18,6 +18,7 @@ export type NavTab =
   | 'nginx'
   | 'services'
   | 'network'
+  | 'security'
   | 'logs'
   | 'ai'
   | 'settings';
@@ -27,6 +28,8 @@ interface SidebarProps {
   onTabChange: (tab: NavTab) => void;
   dockerCount?: number;
   nginxStatus?: string;
+  securityStatus?: 'protected' | 'warning' | 'critical' | 'unknown';
+  securitySummary?: string;
   hasErrors?: boolean;
 }
 
@@ -35,8 +38,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   dockerCount = 4,
   nginxStatus = 'active',
+  securityStatus = 'unknown',
+  securitySummary,
   hasErrors = false
 }) => {
+  const securityMeta = {
+    protected: {
+      label: 'OK',
+      title: 'PROTECTED',
+      color: 'text-emerald-400',
+      badge: 'bg-emerald-500/10 text-emerald-400'
+    },
+    warning: {
+      label: 'WARN',
+      title: 'WARNING',
+      color: 'text-amber-400',
+      badge: 'bg-amber-500/10 text-amber-400'
+    },
+    critical: {
+      label: 'CRIT',
+      title: 'CRITICAL',
+      color: 'text-rose-400',
+      badge: 'bg-rose-500/10 text-rose-400'
+    },
+    unknown: {
+      label: 'N/A',
+      title: 'UNKNOWN',
+      color: 'text-zinc-400',
+      badge: 'bg-zinc-500/10 text-zinc-400'
+    }
+  }[securityStatus];
+
   const navItems: {
     id: NavTab;
     label: string;
@@ -49,6 +81,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'nginx', label: 'Nginx', icon: Globe, badge: nginxStatus.toUpperCase(), badgeColor: 'bg-emerald-500/10 text-emerald-400' },
     { id: 'services', label: 'Services', icon: Layers },
     { id: 'network', label: 'Network', icon: Network },
+    {
+      id: 'security',
+      label: 'Security',
+      icon: Shield,
+      badge: securityMeta.label,
+      badgeColor: securityMeta.badge
+    },
     { id: 'logs', label: 'Logs', icon: Terminal, badge: hasErrors ? 'ERR' : undefined, badgeColor: 'bg-rose-500/20 text-rose-400' },
     { id: 'ai', label: 'AI Assistant', icon: Bot, badge: 'Gemini', badgeColor: 'bg-indigo-500/20 text-indigo-300' },
     { id: 'settings', label: 'Settings', icon: Settings }
@@ -107,20 +146,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Bottom Node Status */}
+      {/* Live Node Security Status */}
       <div className="border-t border-zinc-900 bg-zinc-950/60 p-4">
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-xs">
+        <button
+          type="button"
+          onClick={() => onTabChange('security')}
+          className="w-full rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-left text-xs transition-colors hover:bg-zinc-900/80"
+        >
           <div className="flex items-center justify-between text-zinc-400">
             <span className="flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 text-emerald-400" />
+              <Shield className={`h-3.5 w-3.5 ${securityMeta.color}`} />
               Node Security
             </span>
-            <span className="font-mono text-[11px] text-emerald-400">Hardened</span>
+            <span className={`font-mono text-[11px] font-semibold ${securityMeta.color}`}>
+              {securityMeta.title}
+            </span>
           </div>
-          <div className="mt-2 text-[11px] text-zinc-500">
-            UFW & Fail2ban active. Direct shell execution disabled.
+          <div className="mt-2 line-clamp-2 text-[11px] text-zinc-500">
+            {securitySummary || 'Waiting for host security data.'}
           </div>
-        </div>
+        </button>
       </div>
     </aside>
   );

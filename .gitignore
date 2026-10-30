@@ -6,3 +6,12 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local backups and Python cache — do not distribute
+*.bak-*
+*.pre-*
+__pycache__/
+*.py[cod]
+
+# Local UI recovery snapshots
+.backup-security-ui-*/

@@ -9,6 +9,7 @@ import { NetworkView } from './views/NetworkView';
 import { LogsView } from './views/LogsView';
 import { AiAssistantView } from './views/AiAssistantView';
 import { SettingsView } from './views/SettingsView';
+import { SecurityView } from './views/SecurityView';
 import { api } from './services/api';
 import {
   SystemMetrics,
@@ -16,7 +17,8 @@ import {
   NginxStats,
   SystemService,
   NetworkOverview,
-  HealthStatus
+  HealthStatus,
+  SecurityOverview
 } from './types';
 import { Menu, X } from 'lucide-react';
 
@@ -31,10 +33,12 @@ export default function App() {
   const [services, setServices] = useState<SystemService[] | null>(null);
   const [network, setNetwork] = useState<NetworkOverview | null>(null);
   const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [security, setSecurity] = useState<SecurityOverview | null>(null);
 
   // App Settings States
   const [serverDisplayName, setServerDisplayName] = useState<string>(() => {
-    return localStorage.getItem('scc_server_name') || 'vps-fra-01.ubuntu-prod';
+    const savedName = localStorage.getItem('scc_server_name');
+    return savedName || '';
   });
   const [refreshInterval, setRefreshInterval] = useState<number>(() => {
     return parseInt(localStorage.getItem('scc_refresh_interval') || '5', 10);
@@ -65,13 +69,14 @@ export default function App() {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [sysRes, docRes, ngxRes, srvRes, netRes, hltRes] = await Promise.allSettled([
+      const [sysRes, docRes, ngxRes, srvRes, netRes, hltRes, secRes] = await Promise.allSettled([
         api.getSystem(),
         api.getDocker(),
         api.getNginx(),
         api.getServices(),
         api.getNetwork(),
-        api.getHealth()
+        api.getHealth(),
+        api.getSecurity()
       ]);
 
       if (sysRes.status === 'fulfilled') setSystem(sysRes.value);
@@ -80,6 +85,7 @@ export default function App() {
       if (srvRes.status === 'fulfilled') setServices(srvRes.value);
       if (netRes.status === 'fulfilled') setNetwork(netRes.value);
       if (hltRes.status === 'fulfilled') setHealth(hltRes.value);
+      if (secRes.status === 'fulfilled') setSecurity(secRes.value);
 
       setLastRefreshedAt(new Date());
     } catch (err) {
@@ -112,6 +118,8 @@ export default function App() {
           onTabChange={setActiveTab}
           dockerCount={docker?.running ?? 4}
           nginxStatus={nginx?.status ?? 'active'}
+          securityStatus={security?.status ?? 'unknown'}
+          securitySummary={security?.summary}
         />
       </div>
 
@@ -131,6 +139,8 @@ export default function App() {
               }}
               dockerCount={docker?.running ?? 4}
               nginxStatus={nginx?.status ?? 'active'}
+              securityStatus={security?.status ?? 'unknown'}
+              securitySummary={security?.summary}
             />
           </div>
         </div>
@@ -185,6 +195,10 @@ export default function App() {
 
           {activeTab === 'network' && (
             <NetworkView network={network} onRefresh={fetchData} />
+          )}
+
+          {activeTab === 'security' && (
+            <SecurityView security={security} onRefresh={fetchData} />
           )}
 
           {activeTab === 'logs' && <LogsView />}

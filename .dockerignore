@@ -8,3 +8,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .DS_Store
+
+# Secrets, local backups and generated cache
+.env*
+*.bak-*
+*.pre-*
+__pycache__/
+*.py[cod]
+deploy/.host-agent-staging.*
+
+# Local UI recovery snapshots
+.backup-security-ui-*/

@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-bold tracking-tight text-zinc-100">
-                  {serverDisplayName || systemInfo?.hostname || 'vps-fra-01.ubuntu-prod'}
+                  {systemInfo?.hostname || serverDisplayName || 'Server'}
                 </span>
                 {getStatusBadge()}
               </div>

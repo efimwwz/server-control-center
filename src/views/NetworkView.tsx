@@ -174,7 +174,7 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ network }) => {
           <table className="w-full text-left text-sm font-mono text-xs">
             <thead className="border-b border-zinc-800 text-zinc-400 uppercase text-[11px]">
               <tr>
-                <th className="py-2.5">Interface</th>
+                <th className="py-2.5">Container / Network</th>
                 <th className="py-2.5">Type</th>
                 <th className="py-2.5">State</th>
                 <th className="py-2.5">IPv4 Address</th>
@@ -187,7 +187,12 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ network }) => {
             <tbody className="divide-y divide-zinc-800/50">
               {network.interfaces.map((iface) => (
                 <tr key={iface.name} className="hover:bg-zinc-800/30">
-                  <td className="py-3 font-bold text-zinc-100">{iface.name}</td>
+                  <td className="py-3 font-bold text-zinc-100" title={iface.name}>
+                    <div>{iface.displayName || iface.name}</div>
+                    {iface.dockerNetworkName && (iface.containerNames?.length ?? 0) > 0 && (
+                      <div className="text-[10px] text-zinc-500">{iface.dockerNetworkName}</div>
+                    )}
+                  </td>
                   <td className="py-3 text-zinc-400 capitalize">{iface.type}</td>
                   <td className="py-3">
                     <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-emerald-400">
