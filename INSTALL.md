@@ -6,6 +6,24 @@ This guide explains how to install Server Control Center (SCC), what localhost m
 
 ---
 
+## Supported operating systems
+
+The public one-command installer currently supports **Ubuntu Server 24.04 LTS only**, on `amd64` and `arm64`.
+
+| Operating system | Status |
+|---|---|
+| Ubuntu Server 24.04 LTS | Supported |
+| Ubuntu 22.04 / 26.04 and other Ubuntu releases | Not supported or tested |
+| Debian 12 / 13 | Not currently supported; adaptation and testing are required |
+| Linux Mint, Pop!_OS and other Ubuntu/Debian derivatives | Not officially supported |
+| Fedora, Rocky Linux, AlmaLinux, RHEL, openSUSE, Alpine | Not supported by the current installer |
+
+This restriction is intentional: the installer checks for Ubuntu 24.04, uses `apt`, Ubuntu/Docker repository configuration and Ubuntu-specific service/configuration paths. The host-agent also requires systemd and host tools such as Docker CLI, `iproute2`, `ping` and `journalctl`.
+
+The web application runs in a container, but the host-agent must run on the host operating system to read real host metrics. Running only the dashboard container on another distribution is not a complete SCC installation.
+
+Additional operating systems may be supported later with dedicated installers and CI tests for each OS. Do not bypass the version check or run the internal installer on an unsupported distribution and assume it is safe.
+
 ## 1. Choose how you want to access SCC
 
 There are three common ways to use the dashboard:
