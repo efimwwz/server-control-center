@@ -2,6 +2,11 @@
 set -Eeuo pipefail
 
 SRC="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+VERSION="${SCC_VERSION:-1.1.1}"
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+  echo "Invalid SCC_VERSION: $VERSION"
+  exit 1
+}
 APP=/opt/server-control-center
 AGENT=/opt/scc-agent
 UNIT=/etc/systemd/system/scc-agent.service
@@ -113,6 +118,12 @@ tar -C "$SRC" --exclude='./.git' --exclude='./node_modules' \
   --exclude='*.bak-*' --exclude='*.pre-*' --exclude='__pycache__' \
   -cf - . | tar -C "$APP" -xf -
 install -m 0644 "$SRC/.env.example" "$APP/.env.example"
+cat > "$APP/.env" <<EOF
+SCC_VERSION=$VERSION
+METRICS_PROVIDER=agent
+GEMINI_API_KEY=
+EOF
+chmod 0600 "$APP/.env"
 
 if [[ $NGINX_ACTIVE -eq 1 ]]; then
   [[ ! -e "$NGINX_CONF" ]] || {
@@ -140,9 +151,9 @@ systemctl enable --now scc-agent.service
 systemctl is-active --quiet scc-agent.service
 
 docker compose -f "$APP/docker-compose.yml" config --quiet
-docker compose -f "$APP/docker-compose.yml" build
+docker compose -f "$APP/docker-compose.yml" pull
 COMPOSE_TOUCHED=1
-docker compose -f "$APP/docker-compose.yml" up -d
+docker compose -f "$APP/docker-compose.yml" up -d --no-build --pull never
 
 ready=0
 for _ in $(seq 1 30); do
@@ -161,5 +172,6 @@ fi
 
 COMPLETE=1
 trap - EXIT
-echo "Installation complete. Local panel: http://127.0.0.1:3000"
+echo "Installation complete (version $VERSION). Local panel: http://127.0.0.1:3000"
+echo "Configure your own HTTPS reverse proxy and authentication before exposing the panel."
 echo "Configure the target server's reverse proxy separately if remote access is needed."
