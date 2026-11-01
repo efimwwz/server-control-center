@@ -13,6 +13,7 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   const isDev = process.env.NODE_ENV !== 'production';
+  if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 
   // Security defaults for a same-origin dashboard.
   app.disable('x-powered-by');
