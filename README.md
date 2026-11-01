@@ -42,6 +42,8 @@ curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/
 
 The installer refuses to overwrite existing SCC paths or a container with the SCC container name. If Docker is already installed but inactive, it stops and asks the administrator to start it manually; it does not restart an existing Docker daemon.
 
+**GHCR package visibility:** the first published container package is private by default. After the first release workflow completes, open the `server-control-center` package under your GitHub profile, choose **Package settings → Change visibility → Public**, and confirm. Public GHCR images can then be pulled without authentication. GitHub does not automatically make this package public when the repository becomes public.
+
 ## Access
 
 The panel listens on **127.0.0.1:3000 only**. It is not exposed directly to the public network.
