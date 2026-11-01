@@ -31,7 +31,7 @@ if [[ -d "$UNIT_DIR" ]] &&
 fi
 
 if [[ -f "$APP/docker-compose.yml" ]]; then
-  mapfile -t SERVICES < <(docker compose -f "$APP/docker-compose.yml" config --services)
+  mapfile -t SERVICES < <(docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" config --services)
   if [[ ${#SERVICES[@]} -ne 1 || "${SERVICES[0]}" != "server-control-center" ]]; then
     echo "STOP: unexpected Compose services. Nothing removed."
     printf 'Found: %s\n' "${SERVICES[@]}"
@@ -68,7 +68,7 @@ if [[ ${#ITEMS[@]} -gt 0 ]]; then
 fi
 
 if [[ -f "$APP/docker-compose.yml" ]]; then
-  docker compose -f "$APP/docker-compose.yml" down --timeout 30
+  docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" down --timeout 30
 fi
 
 if [[ -f "$UNIT" ]]; then
