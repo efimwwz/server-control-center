@@ -182,7 +182,16 @@ assert data.get("version") == sys.argv[1]
 ' "$VERSION" || fail "Application health verification failed."
 
 systemctl is-active --quiet scc-agent.service || fail "Host-agent service is not active."
-docker inspect -f '{{.State.Health.Status}}' server-control-center | grep -Fxq healthy ||   fail "Docker container is not healthy."
+
+HEALTHY=0
+for _ in $(seq 1 60); do
+  if [[ "$(docker inspect -f '{{.State.Health.Status}}' server-control-center 2>/dev/null || true)" == "healthy" ]]; then
+    HEALTHY=1
+    break
+  fi
+  sleep 1
+done
+[[ "$HEALTHY" -eq 1 ]] || fail "Docker container did not become healthy within 60 seconds."
 
 echo
 echo "Server Control Center $VERSION installed successfully."
