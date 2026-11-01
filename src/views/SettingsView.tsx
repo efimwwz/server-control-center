@@ -1,20 +1,6 @@
 import React, { useState } from 'react';
 import { HealthStatus } from '../types';
-import {
-  Settings,
-  Server,
-  RefreshCw,
-  Palette,
-  Radio,
-  ShieldCheck,
-  Cpu,
-  Bot,
-  Terminal,
-  Copy,
-  Check,
-  ExternalLink,
-  Code2
-} from 'lucide-react';
+import { Bot, Copy, Check, Code2 } from 'lucide-react';
 
 interface SettingsViewProps {
   serverName: string;
@@ -44,27 +30,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setTimeout(() => setCopiedCode(null), 1800);
   };
 
-  const dockerComposeSnippet = `version: '3.8'
+  const installCommand =
+    'curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo bash';
 
-services:
-  server-control-center:
-    build: .
-    container_name: server-control-center
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - NODE_ENV=production
-      - METRICS_PROVIDER=linux   # switch from mock to linux
-      - GEMINI_API_KEY=\${GEMINI_API_KEY}
-    volumes:
-      # Mount host statistics in read-only mode:
-      - /proc:/proc:ro
-      - /sys:/sys:ro
-      - /etc/os-release:/etc/os-release:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-`;
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -191,62 +159,52 @@ services:
         </div>
       </div>
 
-      {/* Production Migration Guide (Mock -> Real Linux VPS) */}
+      {/* Public one-command installer */}
       <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-6 backdrop-blur-sm">
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
-          <div className="flex items-center gap-2.5">
-            <Code2 className="h-5 w-5 text-emerald-400" />
-            <div>
-              <h3 className="font-semibold text-zinc-100">
-                Production Deployment: Switching Mock to Real Linux Provider
-              </h3>
-              <p className="text-xs text-zinc-400">
-                How to connect this dashboard directly to your Ubuntu 24.04 VPS host metrics.
-              </p>
-            </div>
+        <div className="flex items-center gap-2.5 border-b border-zinc-800 pb-4">
+          <Code2 className="h-5 w-5 text-emerald-400" />
+          <div>
+            <h3 className="font-semibold text-zinc-100">Install Server Control Center</h3>
+            <p className="text-xs text-zinc-400">
+              Install the latest stable release on a new Ubuntu 24.04 VPS.
+            </p>
           </div>
-
-          <button
-            onClick={() => handleCopy(dockerComposeSnippet, 'docker')}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700"
-          >
-            {copiedCode === 'docker' ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Copied</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" />
-                <span>Copy compose.yml</span>
-              </>
-            )}
-          </button>
         </div>
 
-        <div className="mt-4 text-xs text-zinc-300 space-y-3">
+        <div className="mt-4 space-y-3 text-xs text-zinc-300">
           <p>
-            The project adheres to a clean provider interface (<code className="text-emerald-400">SystemMetricsProvider</code>, <code className="text-emerald-400">DockerMetricsProvider</code>, etc.).
-            To monitor real hardware and containers on Ubuntu 24.04:
+            Run this command as an administrator on the server where you want to install the panel.
+            The installer downloads a signed-off GitHub Release archive, verifies its SHA256 checksum,
+            installs Docker when needed, and starts the host agent and application.
           </p>
-
-          <ol className="list-decimal list-inside space-y-2 text-zinc-400">
-            <li>
-              Set <code className="text-zinc-200">METRICS_PROVIDER=linux</code> in your <code className="text-zinc-200">.env</code> or docker-compose file.
-            </li>
-            <li>
-              Mount the host filesystem read-only: <code className="text-zinc-200">/proc</code>, <code className="text-zinc-200">/sys</code>, and <code className="text-zinc-200">/var/run/docker.sock</code> into the container.
-            </li>
-            <li>
-              No frontend code needs to be modified; the exact same REST API contracts will serve the live host telemetry.
-            </li>
-          </ol>
-
-          <pre className="mt-3 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-[11px] text-zinc-300 leading-relaxed">
-            {dockerComposeSnippet}
-          </pre>
+          <div className="flex items-start gap-2">
+            <pre className="min-w-0 flex-1 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-[11px] text-zinc-300">{installCommand}</pre>
+            <button
+              onClick={() => handleCopy(installCommand, 'install')}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-700"
+            >
+              {copiedCode === 'install' ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-emerald-400">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+          <ul className="list-disc space-y-1 pl-5 text-zinc-400">
+            <li>Supported target: Ubuntu 24.04 LTS with systemd.</li>
+            <li>The web panel binds to 127.0.0.1:3000 and is not exposed directly to the internet.</li>
+            <li>Use an SSH tunnel or configure your own HTTPS reverse proxy with authentication.</li>
+            <li>The host agent runs as root to read system and Docker telemetry; review the security documentation first.</li>
+          </ul>
         </div>
       </div>
+
     </div>
   );
 };
