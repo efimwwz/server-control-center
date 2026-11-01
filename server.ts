@@ -14,19 +14,17 @@ async function startServer() {
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   const isDev = process.env.NODE_ENV !== 'production';
 
-  // Basic security and parsing
-  app.use(express.json({ limit: '1mb' }));
-
-  // CORS headers
-  app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
+  // Security defaults for a same-origin dashboard.
+  app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     next();
   });
+
+  app.use(express.json({ limit: '1mb' }));
 
   // Mount API Router
   app.use('/api', apiRouter);
