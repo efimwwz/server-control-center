@@ -548,7 +548,7 @@ export class MockLogsProvider implements LogsProvider {
       timestamp: new Date(Date.now() - 1500 * 1000).toISOString(),
       source: 'docker',
       level: 'warning',
-      service: 'homeassistant',
+      service: 'database',
       message: 'A monitored sensor took longer than 10.0 seconds to update (timeout handled).',
       details: { entity: 'sensor.example' }
     }
