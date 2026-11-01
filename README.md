@@ -2,7 +2,7 @@
 
 **A clear, private-by-default view of your Linux server.**
 
-[Русская версия](README.ru.md) · [Installation and remote-access guide](INSTALL.md)
+[Read in Russian](README.ru.md) · [Installation and remote-access guide](INSTALL.md)
 
 Server Control Center (SCC) is a self-hosted monitoring dashboard for Ubuntu servers. It brings system resources, Docker, Nginx, network information, services, logs and basic security checks together in one web interface.
 
