@@ -216,15 +216,23 @@ sudo systemctl enable --now nginx
 sudo systemctl status nginx
 ~~~
 
-### Шаг 2. Создайте виртуальный хост
+### Шаг 2. Создайте временный HTTP-виртуальный хост для проверки домена
 
-Создайте новый файл конфигурации:
+**Не направляйте веб-панель SCC через публичный HTTP.** Сначала откроем только путь, необходимый для проверки домена и выпуска сертификата. Сама панель останется недоступной через домен до настройки HTTPS и пароля.
+
+Создайте каталог для проверки сертификата:
+
+~~~bash
+sudo install -d -o www-data -g www-data -m 0755 /var/www/letsencrypt/.well-known/acme-challenge
+~~~
+
+Создайте новый файл Nginx:
 
 ~~~bash
 sudo nano /etc/nginx/sites-available/scc.example.com
 ~~~
 
-Сначала используйте HTTP-конфигурацию. Замените scc.example.com на свой домен:
+Замените scc.example.com на свой домен:
 
 ~~~nginx
 server {
@@ -232,17 +240,15 @@ server {
     listen [::]:80;
     server_name scc.example.com;
 
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        allow all;
+    }
+
+    # Панель пока закрыта. Доступ появится после настройки HTTPS и пароля.
     location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_connect_timeout 5s;
-        proxy_read_timeout 60s;
+        return 404;
     }
 }
 ~~~
@@ -261,7 +267,7 @@ sudo systemctl reload nginx
 
 DNS-запись должна указывать на этот VPS, а сервер должен быть доступен из интернета по TCP-порту 80. И firewall сервера, и firewall провайдера должны пропускать проверочный запрос.
 
-Ниже приведён рекомендуемый способ установки Certbot через Snap для Ubuntu. Если Certbot уже установлен, сначала проверьте источник установки, чтобы не создавать две конкурирующие версии.
+Ниже приведён рекомендуемый способ установки Certbot через Snap для Ubuntu. Если Certbot уже установлен, сначала проверьте источник установки. Не держите одновременно конкурирующие версии Certbot из Snap и apt.
 
 ~~~bash
 sudo apt update
@@ -275,13 +281,13 @@ sudo snap install --classic certbot
 sudo ln -s /snap/bin/certbot /usr/local/bin/certbot
 ~~~
 
-Запросите и установите сертификат:
+Запросите сертификат и разрешите Certbot настроить HTTPS и перенаправление HTTP на HTTPS:
 
 ~~~bash
-sudo certbot --nginx -d scc.example.com
+sudo certbot --nginx --redirect -d scc.example.com
 ~~~
 
-Следуйте подсказкам. При выборе перенаправления выберите переход с HTTP на HTTPS. Certbot изменит конфигурацию Nginx, добавив сертификат.
+Следуйте подсказкам. Certbot добавит настройки сертификата в Nginx. Однако панель пока не проксируется: защищённый HTTPS-прокси мы добавим на следующем шаге.
 
 Проверьте автоматическое продление:
 
@@ -289,9 +295,9 @@ sudo certbot --nginx -d scc.example.com
 sudo certbot renew --dry-run
 ~~~
 
-### Шаг 4. Добавьте защиту паролем
+### Шаг 4. Добавьте пароль и HTTPS-прокси
 
-В SCC нет собственной страницы входа. Добавим авторизацию на уровне Nginx.
+В SCC нет собственной страницы входа. Поэтому настроим проверку логина и пароля в Nginx **до передачи запросов приложению SCC**.
 
 Установите утилиту для файла паролей:
 
@@ -314,14 +320,7 @@ sudo chown root:www-data /etc/nginx/.htpasswd-scc
 sudo chmod 640 /etc/nginx/.htpasswd-scc
 ~~~
 
-Откройте конфигурацию Nginx, которую создал Certbot. В HTTPS-блоке server для scc.example.com добавьте две директивы внутрь блока location /:
-
-~~~nginx
-auth_basic "Server Control Center";
-auth_basic_user_file /etc/nginx/.htpasswd-scc;
-~~~
-
-Итоговый HTTPS-блок location / должен выглядеть примерно так:
+Откройте конфигурацию Nginx для scc.example.com. Certbot уже создал HTTPS-блок server, который слушает порт 443. Внутри этого HTTPS-блока создайте или замените блок location / следующим:
 
 ~~~nginx
 location / {
@@ -336,12 +335,15 @@ location / {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
+    # Не передаём приложению SCC учётные данные обратного прокси.
+    proxy_set_header Authorization "";
+
     proxy_connect_timeout 5s;
     proxy_read_timeout 60s;
 }
 ~~~
 
-Сохраните директивы сертификата и перенаправление HTTP на HTTPS, которые создал Certbot. Не заменяйте ими всю конфигурацию Certbot.
+Сохраните директивы сертификата и перенаправление HTTP на HTTPS, которые создал Certbot. Не заменяйте ими всю конфигурацию Certbot. HTTP-блок на порту 80 должен продолжать перенаправлять обычные запросы на HTTPS; Certbot сам обработает путь проверки при продлении сертификата.
 
 Проверьте и перечитайте конфигурацию:
 
