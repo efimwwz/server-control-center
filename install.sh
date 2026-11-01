@@ -58,6 +58,17 @@ if ! command -v docker >/dev/null 2>&1; then
   fi
 fi
 
+if ! command -v docker >/dev/null 2>&1; then
+  if systemctl is-active --quiet containerd.service 2>/dev/null; then
+    fail "containerd is already active. Refusing to install Docker Engine over an existing container runtime."
+  fi
+  for package in containerd containerd.io; do
+    if dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null | grep -Fxq installed; then
+      fail "Package $package is already installed. Refusing to replace or reconfigure the existing container runtime."
+    fi
+  done
+fi
+
 if ss -Hltn '( sport = :3000 )' 2>/dev/null | grep -q .; then
   fail "TCP port 3000 is already occupied."
 fi
