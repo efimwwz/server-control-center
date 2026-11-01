@@ -8,7 +8,7 @@ This guide explains how to install Server Control Center (SCC), what localhost m
 
 ## Supported operating systems
 
-The public one-command installer currently supports **Ubuntu Server 24.04 LTS only**, on `amd64` and `arm64`.
+The public one-command installer currently supports **Ubuntu 24.04 LTS only (Server edition recommended)**, on `amd64` and `arm64`.
 
 | Operating system | Status |
 |---|---|
