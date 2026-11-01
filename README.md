@@ -84,10 +84,10 @@ When this option is enabled, the AI assistant sends the user's question and sele
 
 ```bash
 # Application status
-docker compose -f /opt/server-control-center/docker-compose.yml ps
+docker compose --project-directory /opt/server-control-center -f /opt/server-control-center/docker-compose.yml ps
 
 # Application logs
-docker compose -f /opt/server-control-center/docker-compose.yml logs --tail 100
+docker compose --project-directory /opt/server-control-center -f /opt/server-control-center/docker-compose.yml logs --tail 100
 
 # Host-agent status
 systemctl status scc-agent.service
