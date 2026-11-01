@@ -1,65 +1,82 @@
 # Server Control Center
 
-**A clear view of your Linux server. One dashboard, real host data.**
+**A clear, private-by-default view of your Linux server.**
 
-[English documentation](README.en.md) · [Документация на русском](README.ru.md)
+[Русская версия](README.ru.md) · [Installation and remote-access guide](INSTALL.md)
 
-Source version: **1.1.1** · License: [MIT](LICENSE) · Target platform: Ubuntu 24.04 LTS
+Server Control Center (SCC) is a self-hosted monitoring dashboard for Ubuntu servers. It brings system resources, Docker, Nginx, network information, services, logs and basic security checks together in one web interface.
 
----
+## Who is it for?
 
-## What is SCC? / Что такое SCC?
+- **Beginners:** understand the main health indicators of a server without starting with dozens of terminal commands.
+- **Administrators:** inspect containers, services, network state, logs and basic security configuration.
+- **Engineers:** use a Docker-based web application, a separate systemd host-agent, a local Unix socket and a CI-tested release process.
 
-**English:** Server Control Center (SCC) is a self-hosted dashboard that helps you understand what is happening on your Linux server. It brings CPU, memory, disk, Docker, Nginx, network, services, logs and basic security information together in one place.
+## What SCC shows
 
-SCC is a **monitoring tool, not a remote-control panel**. It reads and displays information. It does not manage containers, change firewall or SSH settings, or automatically repair your server.
-
-**Русский:** Server Control Center (SCC) — это собственная веб-панель для наблюдения за Linux-сервером. Она собирает в одном месте показатели процессора, памяти, диска, Docker, Nginx, сети, служб, журналов и базовые сведения о безопасности.
-
-SCC — это **инструмент мониторинга, а не пульт управления сервером**. Он показывает информацию, но не управляет контейнерами, не меняет firewall или SSH и не исправляет сервер автоматически.
-
-## Who is it for? / Для кого этот проект?
-
-- **Beginners / Новичкам:** see the main server indicators without learning dozens of terminal commands first.
-- **Administrators / Администраторам:** inspect containers, services, logs, networking and basic security posture in one dashboard.
-- **Engineers / Инженерам:** use a Docker-based web app, a separate systemd host-agent, a Unix socket, API endpoints and GitHub Actions CI.
-
-## At a glance / Кратко
-
-| English | Русский |
+| Area | Information |
 |---|---|
-| Self-hosted; your dashboard runs on your server | Самостоятельная установка; панель работает на вашем сервере |
-| Ubuntu 24.04 LTS, amd64 or arm64 | Ubuntu 24.04 LTS, amd64 или arm64 |
-| Web panel bound to localhost by default | Веб-панель по умолчанию доступна только через localhost |
-| Host agent reads host metrics; web container has no Docker socket | Агент читает показатели хоста; веб-контейнер не получает Docker socket |
-| Optional Gemini AI; telemetry/log context is sent to Google when used | Необязательный Gemini AI; при использовании данные и фрагменты логов отправляются Google |
-| MIT License | Лицензия MIT |
+| System | CPU, RAM, disk, load average, uptime and network throughput |
+| Docker | Containers, images, ports, CPU/RAM use and restart counts |
+| Nginx | Service status, active connections, request counters and virtual hosts |
+| Services | systemd service status, PID, memory and uptime |
+| Network | Interfaces, gateway, DNS, public IPv4, latency and packet loss |
+| Logs | Recent selected Nginx, Docker and systemd events |
+| Security | Basic firewall, SSH, Fail2ban and SCC service checks |
+| AI assistant | Optional analysis using Google Gemini |
 
-## Installation status / Статус установки
+## What SCC does not do
 
-**The source repository is being prepared for public release.** The one-command installer requires a published GitHub Release and a public GHCR image. Until both are available, the installation command below is a preview and will not complete successfully.
+SCC is a monitoring dashboard, not a remote administration panel. It does not start, stop or remove containers; change firewall, SSH or Nginx settings; or automatically repair the server. It is not an antivirus or vulnerability scanner.
 
-**Исходный код готовится к публичному выпуску.** Для работы установщика нужны опубликованный GitHub Release и доступный для скачивания образ GHCR. Пока они не опубликованы, команда ниже является примером и не завершит установку.
+SCC has no built-in login screen. Protect remote access with an SSH tunnel or an authenticated HTTPS reverse proxy. Do not expose port <code>3000</code> directly to the internet.
+
+## Installation
+
+Target platform: **Ubuntu 24.04 LTS**, <code>amd64</code> or <code>arm64</code>, with systemd.
+
+The installer can install Docker Engine if it is not present and no conflicting container runtime is detected. It downloads a prebuilt image from GitHub Container Registry; Node.js and npm are not required on the target server.
+
+The one-command installer will become usable after the source repository, a GitHub Release and the corresponding GHCR image have been published publicly. Until then, the command is shown for reference only:
 
 ~~~bash
 curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo bash
 ~~~
 
-Before using SCC on a real server, read the installation and security sections in the language guide:
+Read the complete guide before installing:
 
-- [English guide: installation, access, privacy, troubleshooting and development](README.en.md)
-- [Русское руководство: установка, доступ, приватность, устранение неполадок и разработка](README.ru.md)
+- [Installation, localhost, SSH tunnel, Nginx, Caddy, HTTPS and authentication](INSTALL.md)
+- [Русская документация](README.ru.md)
 
-## Security note / Важно о безопасности
+## Security in brief
 
-SCC has no built-in login screen. Do not expose port 3000 directly to the internet. Use an SSH tunnel or an authenticated HTTPS reverse proxy. The host-agent runs with root privileges and uses the Docker CLI; protect the server and review the security documentation before installation.
+- The dashboard container runs as an unprivileged user.
+- The Docker socket is not mounted into the dashboard container.
+- A separate host-agent runs with root privileges to read host metrics and Docker information.
+- The dashboard is published on <code>127.0.0.1:3000</code> only.
+- Optional Gemini analysis sends the user's question, selected telemetry and part of recent logs to Google.
 
-В SCC нет встроенной страницы входа. Не открывайте порт 3000 напрямую в интернет. Используйте SSH-туннель или HTTPS reverse proxy с аутентификацией. Host-agent работает с правами root и использует Docker CLI; защитите сервер и прочитайте раздел безопасности до установки.
+Review the security and data-handling section in the installation guide before enabling AI or exposing the dashboard through a domain.
 
-## Links / Ссылки
+## Development
 
-- [Русский README](README.ru.md)
-- [English README](README.en.md)
-- [Installation guide / Руководство по установке](INSTALL.md)
-- [Changelog / История изменений](CHANGELOG.md)
-- [MIT License](LICENSE)
+Requirements: Node.js 22 and npm.
+
+~~~bash
+npm ci
+npm run lint
+npm run build
+METRICS_PROVIDER=mock npm run dev
+~~~
+
+The <code>mock</code> provider uses synthetic demonstration data. A production installation uses the host-agent provider.
+
+## Project information
+
+- Source version: <code>1.1.1</code>
+- License: [MIT](LICENSE)
+- Release notes: [CHANGELOG.md](CHANGELOG.md)
+- Russian documentation: [README.ru.md](README.ru.md)
+- Installation guide: [INSTALL.md](INSTALL.md)
+
+Contributions and bug reports are welcome. Never commit passwords, API keys, private IP addresses or server configuration files.
