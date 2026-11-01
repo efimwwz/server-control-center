@@ -2,7 +2,7 @@
 
 This guide explains how to install Server Control Center (SCC), what localhost means, and how to make the dashboard available safely through SSH, Nginx or Caddy.
 
-[Русское руководство](INSTALL.ru.md) · [Project overview](README.md)
+[Russian guide](INSTALL.ru.md) · [Project overview](README.md)
 
 ---
 
