@@ -13,6 +13,7 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   const isDev = process.env.NODE_ENV !== 'production';
+  const providerMode = process.env.METRICS_PROVIDER || (isDev ? 'mock' : 'agent');
   if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 
   // Security defaults for a same-origin dashboard.
@@ -51,7 +52,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Server Control Center] Running on http://0.0.0.0:${PORT} (Mode: ${process.env.METRICS_PROVIDER || 'mock'})`);
+    console.log(`[Server Control Center] Running on http://0.0.0.0:${PORT} (Mode: ${providerMode})`);
   });
 }
 
