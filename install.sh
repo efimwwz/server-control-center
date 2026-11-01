@@ -65,9 +65,26 @@ esac
 echo "========== DOCKER CHECK =========="
 if command -v docker >/dev/null 2>&1; then
   if ! docker compose version >/dev/null 2>&1; then
-    echo "Docker CLI exists but the Compose plugin is missing. Installing Ubuntu Compose v2 without restarting Docker."
+    echo "Docker CLI exists but the Compose plugin is missing. Installing only Docker Compose from Docker's official repository."
     apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2
+    DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl
+    install -m 0755 -d /etc/apt/keyrings
+    if [[ ! -s /etc/apt/keyrings/docker.asc ]]; then
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+    fi
+    if [[ ! -s /etc/apt/sources.list.d/docker.sources ]]; then
+      cat > /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: ${UBUNTU_CODENAME:-$VERSION_CODENAME}
+Components: stable
+Architectures: ${ARCH}
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+    fi
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-plugin
   fi
   systemctl is-active --quiet docker || {
     echo "Docker is installed but inactive. The installer will not start or restart an existing Docker daemon."
