@@ -66,6 +66,9 @@ jobs:
           curl -fsS http://127.0.0.1:3000/api/docker >/dev/null
           curl -fsS http://127.0.0.1:3000/api/network >/dev/null
           curl -fsS http://127.0.0.1:3000/api/services >/dev/null
+          curl -fsS http://127.0.0.1:3000/api/nginx >/dev/null
+          curl -fsS http://127.0.0.1:3000/api/logs >/dev/null
+          curl -fsS http://127.0.0.1:3000/api/security >/dev/null
           curl -fsS -X POST http://127.0.0.1:3000/api/ai/analyze \
             -H 'Content-Type: application/json' \
             -d '{"question":"Give me a short server overview"}' >/dev/null
