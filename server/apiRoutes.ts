@@ -32,52 +32,68 @@ const agentSecurity = new AgentSecurityMetricsProvider();
 
 export const apiRouter = Router();
 
-// In-Memory Sliding Window Rate Limiter
+// Bounded in-memory rate limits. The general limit is high enough for
+// the fastest dashboard polling interval (seven requests every two seconds).
 interface ClientRateInfo {
   count: number;
   resetAt: number;
 }
 
-const rateLimitMap = new Map<string, ClientRateInfo>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 150;
-
-function rateLimiter(
-  req: Request,
-  res: Response,
-  next: () => void,
+function createRateLimiter(
+  maxRequests: number,
+  windowMs: number,
+  message: string,
 ) {
-  const ip =
-    req.ip ||
-    req.socket.remoteAddress ||
-    '127.0.0.1';
+  const clients = new Map<string, ClientRateInfo>();
+  const maxClients = 10_000;
+  let lastCleanup = 0;
 
-  const now = Date.now();
-  const info = rateLimitMap.get(ip);
+  return (req: Request, res: Response, next: () => void) => {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
 
-  if (!info || now > info.resetAt) {
-    rateLimitMap.set(ip, {
-      count: 1,
-      resetAt: now + RATE_LIMIT_WINDOW_MS,
-    });
+    if (now - lastCleanup >= windowMs) {
+      for (const [key, value] of clients) {
+        if (value.resetAt <= now) clients.delete(key);
+      }
+      lastCleanup = now;
+    }
 
-    return next();
-  }
+    let info = clients.get(ip);
+    if (!info || now >= info.resetAt) {
+      if (!info && clients.size >= maxClients) {
+        return res.status(503).json({
+          error: 'Rate limiter capacity reached',
+          message: 'Please retry shortly.',
+        });
+      }
+      info = { count: 0, resetAt: now + windowMs };
+      clients.set(ip, info);
+    }
 
-  if (info.count >= MAX_REQUESTS_PER_WINDOW) {
-    return res.status(429).json({
-      error: 'Too Many Requests',
-      message:
-        'Rate limit exceeded. Please wait before refreshing or sending queries.',
-      retryAfterSeconds: Math.ceil(
-        (info.resetAt - now) / 1000,
-      ),
-    });
-  }
+    if (info.count >= maxRequests) {
+      return res.status(429).json({
+        error: 'Too Many Requests',
+        message,
+        retryAfterSeconds: Math.max(1, Math.ceil((info.resetAt - now) / 1000)),
+      });
+    }
 
-  info.count += 1;
-  next();
+    info.count += 1;
+    next();
+  };
 }
+
+const rateLimiter = createRateLimiter(
+  1800,
+  60 * 1000,
+  'API request limit exceeded. Please wait before retrying.',
+);
+const aiRateLimiter = createRateLimiter(
+  12,
+  60 * 1000,
+  'AI request limit exceeded. Please wait before asking another question.',
+);
 
 apiRouter.use(rateLimiter);
 
