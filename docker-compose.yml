@@ -10,6 +10,7 @@ services:
       PORT: "3000"
       NODE_ENV: production
       METRICS_PROVIDER: ${METRICS_PROVIDER:-agent}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
       - /run/scc-agent:/run/scc-agent:ro
