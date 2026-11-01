@@ -52,6 +52,12 @@ if command -v docker >/dev/null 2>&1; then
   fi
 fi
 
+if ! command -v docker >/dev/null 2>&1; then
+  if systemctl list-unit-files --no-legend docker.service 2>/dev/null | grep -q . || [[ -S /var/run/docker.sock ]]; then
+    fail "A Docker service/socket already exists but the Docker CLI is missing. Refusing to install over an existing container runtime."
+  fi
+fi
+
 if ss -Hltn '( sport = :3000 )' 2>/dev/null | grep -q .; then
   fail "TCP port 3000 is already occupied."
 fi
