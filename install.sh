@@ -100,6 +100,51 @@ case "$ARCH" in
   *) fail "Unsupported architecture: $ARCH (supported: amd64, arm64)." ;;
 esac
 
+echo "========== SELECT RELEASE =========="
+if [[ -n "${SCC_VERSION:-}" ]]; then
+  TAG="$SCC_VERSION"
+  [[ "$TAG" == v* ]] || TAG="v$TAG"
+else
+  RELEASE_JSON="$(curl -fsSL --retry 3 \
+    -H 'Accept: application/vnd.github+json' \
+    -H 'X-GitHub-Api-Version: 2022-11-28' \
+    "$API_URL/releases/latest")" || fail "Cannot query the latest GitHub Release."
+  TAG="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("tag_name",""))' <<<"$RELEASE_JSON")"
+fi
+
+[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "Invalid or missing release tag: $TAG"
+
+VERSION="${TAG#v}"
+ARCHIVE="server-control-center-${TAG}.tar.gz"
+CHECKSUM="server-control-center-${TAG}.sha256"
+
+WORK_DIR="$(mktemp -d /var/tmp/scc-install.XXXXXX)"
+chmod 0700 "$WORK_DIR"
+
+echo "Release: $TAG"
+echo "Downloading release archive and checksum..."
+
+curl -fL --retry 3 "$RELEASE_URL/$TAG/$ARCHIVE" -o "$WORK_DIR/$ARCHIVE"
+curl -fL --retry 3 "$RELEASE_URL/$TAG/$CHECKSUM" -o "$WORK_DIR/$CHECKSUM"
+
+echo
+echo "========== VERIFY RELEASE =========="
+(
+  cd "$WORK_DIR"
+  sha256sum -c "$CHECKSUM"
+)
+
+echo
+echo "========== EXTRACT RELEASE =========="
+mkdir -m 0750 "$WORK_DIR/source"
+tar -xzf "$WORK_DIR/$ARCHIVE" -C "$WORK_DIR/source" --strip-components=1
+
+[[ -s "$WORK_DIR/source/deploy/install.sh" ]] || fail "Release archive does not contain deploy/install.sh."
+[[ -s "$WORK_DIR/source/docker-compose.yml" ]] || fail "Release archive does not contain docker-compose.yml."
+[[ -s "$WORK_DIR/source/deploy/host-agent/security_metrics.py" ]] || fail "Release archive is incomplete."
+
+echo
+
 echo "========== DOCKER CHECK =========="
 if command -v docker >/dev/null 2>&1; then
   if ! docker compose version >/dev/null 2>&1; then
@@ -159,50 +204,6 @@ fi
 
 docker compose version >/dev/null
 systemctl is-active --quiet docker || fail "Docker service is not active."
-
-echo
-echo "========== SELECT RELEASE =========="
-if [[ -n "${SCC_VERSION:-}" ]]; then
-  TAG="$SCC_VERSION"
-  [[ "$TAG" == v* ]] || TAG="v$TAG"
-else
-  RELEASE_JSON="$(curl -fsSL --retry 3 \
-    -H 'Accept: application/vnd.github+json' \
-    -H 'X-GitHub-Api-Version: 2022-11-28' \
-    "$API_URL/releases/latest")" || fail "Cannot query the latest GitHub Release."
-  TAG="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("tag_name",""))' <<<"$RELEASE_JSON")"
-fi
-
-[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "Invalid or missing release tag: $TAG"
-
-VERSION="${TAG#v}"
-ARCHIVE="server-control-center-${TAG}.tar.gz"
-CHECKSUM="server-control-center-${TAG}.sha256"
-
-WORK_DIR="$(mktemp -d /var/tmp/scc-install.XXXXXX)"
-chmod 0700 "$WORK_DIR"
-
-echo "Release: $TAG"
-echo "Downloading release archive and checksum..."
-
-curl -fL --retry 3 "$RELEASE_URL/$TAG/$ARCHIVE" -o "$WORK_DIR/$ARCHIVE"
-curl -fL --retry 3 "$RELEASE_URL/$TAG/$CHECKSUM" -o "$WORK_DIR/$CHECKSUM"
-
-echo
-echo "========== VERIFY RELEASE =========="
-(
-  cd "$WORK_DIR"
-  sha256sum -c "$CHECKSUM"
-)
-
-echo
-echo "========== EXTRACT RELEASE =========="
-mkdir -m 0750 "$WORK_DIR/source"
-tar -xzf "$WORK_DIR/$ARCHIVE" -C "$WORK_DIR/source" --strip-components=1
-
-[[ -s "$WORK_DIR/source/deploy/install.sh" ]] || fail "Release archive does not contain deploy/install.sh."
-[[ -s "$WORK_DIR/source/docker-compose.yml" ]] || fail "Release archive does not contain docker-compose.yml."
-[[ -s "$WORK_DIR/source/deploy/host-agent/security_metrics.py" ]] || fail "Release archive is incomplete."
 
 echo
 echo "========== INSTALL SERVER CONTROL CENTER =========="
