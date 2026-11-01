@@ -13,4 +13,8 @@ ENV PORT=3000
 
 EXPOSE 3000
 
+# The host-agent socket is root:root with mode 0660; the app uses the root
+# group while running as the unprivileged node UID.
+USER node:root
+
 CMD ["npm", "run", "start"]
