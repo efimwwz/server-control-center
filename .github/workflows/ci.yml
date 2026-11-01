@@ -68,7 +68,9 @@ jobs:
           curl -fsS http://127.0.0.1:3000/api/services >/dev/null
           curl -fsS http://127.0.0.1:3000/api/nginx >/dev/null
           curl -fsS http://127.0.0.1:3000/api/logs >/dev/null
-          curl -fsS http://127.0.0.1:3000/api/security >/dev/null
+          security_status="$(curl -sS -o /tmp/scc-security.json -w '%{http_code}' http://127.0.0.1:3000/api/security)"
+          test "$security_status" = "503"
+          node -e 'const d=require("/tmp/scc-security.json"); if(d.error!=="Security telemetry requires METRICS_PROVIDER=agent") process.exit(1)'
           curl -fsS -X POST http://127.0.0.1:3000/api/ai/analyze \
             -H 'Content-Type: application/json' \
             -d '{"question":"Give me a short server overview"}' >/dev/null
@@ -152,6 +154,7 @@ jobs:
           done
           test "$ready" -eq 1
           node -e 'const d=require("/tmp/scc-agent-system.json"); if(d.info?.hostname!=="ci-agent-host") process.exit(1)'
+          curl -fsS http://127.0.0.1:3001/api/security >/dev/null
 
       - name: Check shell scripts
         run: bash -n install.sh deploy/install.sh deploy/uninstall.sh
