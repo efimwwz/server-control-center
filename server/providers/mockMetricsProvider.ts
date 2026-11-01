@@ -143,8 +143,8 @@ export class MockDockerMetricsProvider implements DockerMetricsProvider {
     const containers: DockerContainer[] = [
       {
         id: 'c8f7d912a101',
-        name: '3x-ui',
-        image: 'ghcr.io/mhsanaei/3x-ui:latest',
+        name: 'web',
+        image: 'nginx:stable-alpine',
         status: 'UP',
         statusDetail: 'Up 14 days (healthy)',
         uptime: '14 days',
@@ -152,15 +152,15 @@ export class MockDockerMetricsProvider implements DockerMetricsProvider {
         memoryUsageBytes: 92 * 1024 * 1024,
         memoryLimitBytes: 8192 * 1024 * 1024,
         memoryFormatted: '92 MB / 8.0 GB',
-        ports: ['0.0.0.0:2053->2053/tcp', '0.0.0.0:443->443/tcp'],
+        ports: ['127.0.0.1:8080->80/tcp'],
         created: '2026-09-11 04:12:00',
         restartCount: 0,
-        command: '/app/x-ui'
+        command: 'nginx -g daemon off;'
       },
       {
         id: 'a4b1e890c202',
-        name: 'n8n',
-        image: 'docker.n8n.io/n8nio/n8n:latest',
+        name: 'worker',
+        image: 'node:22-alpine',
         status: 'UP',
         statusDetail: 'Up 9 days',
         uptime: '9 days',
@@ -168,15 +168,15 @@ export class MockDockerMetricsProvider implements DockerMetricsProvider {
         memoryUsageBytes: 348 * 1024 * 1024,
         memoryLimitBytes: 8192 * 1024 * 1024,
         memoryFormatted: '348 MB / 8.0 GB',
-        ports: ['127.0.0.1:5678->5678/tcp'],
+        ports: ['127.0.0.1:8081->3000/tcp'],
         created: '2026-09-16 11:35:12',
         restartCount: 0,
-        command: 'tini -- /docker-entrypoint.sh'
+        command: 'node server.js'
       },
       {
         id: 'e3c9d745f303',
-        name: 'homeassistant',
-        image: 'ghcr.io/home-assistant/home-assistant:stable',
+        name: 'database',
+        image: 'postgres:16-alpine',
         status: 'UP',
         statusDetail: 'Up 14 days',
         uptime: '14 days',
@@ -184,15 +184,15 @@ export class MockDockerMetricsProvider implements DockerMetricsProvider {
         memoryUsageBytes: 425 * 1024 * 1024,
         memoryLimitBytes: 8192 * 1024 * 1024,
         memoryFormatted: '425 MB / 8.0 GB',
-        ports: ['127.0.0.1:8123->8123/tcp'],
+        ports: ['127.0.0.1:5432->5432/tcp'],
         created: '2026-09-11 04:15:30',
         restartCount: 0,
-        command: '/init'
+        command: 'postgres'
       },
       {
         id: 'b7a2d109f404',
-        name: 'glances',
-        image: 'nicolargo/glances:latest',
+        name: 'cache',
+        image: 'redis:7-alpine',
         status: 'UP',
         statusDetail: 'Up 14 days',
         uptime: '14 days',
@@ -200,10 +200,10 @@ export class MockDockerMetricsProvider implements DockerMetricsProvider {
         memoryUsageBytes: 98 * 1024 * 1024,
         memoryLimitBytes: 8192 * 1024 * 1024,
         memoryFormatted: '98 MB / 8.0 GB',
-        ports: ['127.0.0.1:61208->61208/tcp'],
+        ports: ['127.0.0.1:6379->6379/tcp'],
         created: '2026-09-11 04:18:00',
         restartCount: 0,
-        command: '/venv/bin/glances -w'
+        command: 'redis-server'
       }
     ];
 
@@ -253,28 +253,28 @@ export class MockNginxMetricsProvider implements NginxMetricsProvider {
       requestHistory: reqHistory,
       topVirtualHosts: [
         {
-          serverName: 'n8n.myvps.cloud',
+          serverName: 'app.example.test',
           listenPort: 443,
           upstream: 'http://127.0.0.1:5678',
           requests: 842100,
           status: 'healthy'
         },
         {
-          serverName: 'vpn.myvps.cloud',
+          serverName: 'api.example.test',
           listenPort: 443,
           upstream: 'http://127.0.0.1:2053',
           requests: 382400,
           status: 'healthy'
         },
         {
-          serverName: 'home.myvps.cloud',
+          serverName: 'admin.example.test',
           listenPort: 443,
           upstream: 'http://127.0.0.1:8123',
           requests: 219800,
           status: 'healthy'
         },
         {
-          serverName: 'glances.myvps.cloud',
+          serverName: 'status.example.test',
           listenPort: 443,
           upstream: 'http://127.0.0.1:61208',
           requests: 44910,
@@ -324,7 +324,7 @@ export class MockServicesMetricsProvider implements ServicesMetricsProvider {
         pid: 982,
         memoryBytes: 14 * 1024 * 1024,
         memoryFormatted: '14.1 MB',
-        description: 'OpenBSD Secure Shell server (Port 2222, Pubkey only)',
+        description: 'OpenBSD Secure Shell server',
         enabledOnBoot: true
       },
       {
@@ -377,18 +377,18 @@ export class MockNetworkMetricsProvider implements NetworkMetricsProvider {
     const txSpeed = Math.round(3420000 + Math.cos(now / 9000) * 600000);
 
     return {
-      publicIp: '185.196.220.142',
+      publicIp: '203.0.113.10',
       hostname: 'example-vps.local',
-      defaultGateway: '185.196.220.1',
+      defaultGateway: '203.0.113.1',
       dnsServers: ['1.1.1.1', '8.8.8.8', '1.0.0.1'],
       interfaces: [
         {
           name: 'eth0',
           type: 'ethernet',
           state: 'UP',
-          ipv4: '185.196.220.142',
+          ipv4: '203.0.113.10',
           netmask: '255.255.255.0',
-          mac: '52:54:00:8e:41:9a',
+          mac: '02:00:00:00:00:10',
           mtu: 1500,
           rxBytes: 198421098420,
           txBytes: 412098231049,
@@ -404,7 +404,7 @@ export class MockNetworkMetricsProvider implements NetworkMetricsProvider {
           state: 'UP',
           ipv4: '172.17.0.1',
           netmask: '255.255.0.0',
-          mac: '02:42:c1:9a:14:bb',
+          mac: '02:00:00:00:00:20',
           mtu: 1500,
           rxBytes: 94810294020,
           txBytes: 89410294020,
@@ -437,7 +437,7 @@ export class MockNetworkMetricsProvider implements NetworkMetricsProvider {
       txSpeedFormatted: formatSpeed(txSpeed),
       packetLossPercent: 0.0,
       latencyMs: Number((13.8 + Math.random() * 1.5).toFixed(1)),
-      pingTarget: '1.1.1.1 (Cloudflare DNS)'
+      pingTarget: '1.1.1.1 (public DNS resolver)'
     };
   }
 }
@@ -450,7 +450,7 @@ export class MockLogsProvider implements LogsProvider {
       source: 'nginx',
       level: 'info',
       service: 'nginx.service',
-      message: '178.62.204.12 - - [25/Sep/2026:16:24:12 +0000] "GET /api/v1/workflows HTTP/2.0" 200 4812 "https://n8n.myvps.cloud" "Mozilla/5.0"',
+      message: '203.0.113.42 - - [25/Sep/2026:16:24:12 +0000] "GET /api/v1/workflows HTTP/2.0" 200 4812 "https://app.example.test" "Mozilla/5.0"',
       details: { status: 200, latency: '12ms' }
     },
     {
@@ -458,8 +458,8 @@ export class MockLogsProvider implements LogsProvider {
       timestamp: new Date(Date.now() - 95 * 1000).toISOString(),
       source: 'docker',
       level: 'info',
-      service: 'n8n',
-      message: 'Node execution finished: "Telegram Bot Webhook" (Workflow ID: 41)',
+      service: 'worker',
+      message: 'Background job completed successfully.',
       details: { workflowId: 41, status: 'success' }
     },
     {
@@ -467,9 +467,9 @@ export class MockLogsProvider implements LogsProvider {
       timestamp: new Date(Date.now() - 140 * 1000).toISOString(),
       source: 'docker',
       level: 'info',
-      service: 'homeassistant',
-      message: 'Syncing 42 entities with HomeKit bridge. State refresh completed in 18ms.',
-      details: { component: 'homekit' }
+      service: 'database',
+      message: 'Database maintenance completed successfully.',
+      details: { component: 'database' }
     },
     {
       id: 'log-4',
@@ -486,7 +486,7 @@ export class MockLogsProvider implements LogsProvider {
       source: 'nginx',
       level: 'warning',
       service: 'nginx.service',
-      message: '45.154.255.89 - - [25/Sep/2026:16:20:45 +0000] "GET /wp-login.php HTTP/1.1" 404 162 "-" "Mozilla/5.0 scanner"',
+      message: '198.51.100.22 - - [25/Sep/2026:16:20:45 +0000] "GET /wp-login.php HTTP/1.1" 404 162 "-" "Mozilla/5.0 scanner"',
       details: { status: 404, blocked: false }
     },
     {
@@ -494,9 +494,9 @@ export class MockLogsProvider implements LogsProvider {
       timestamp: new Date(Date.now() - 320 * 1000).toISOString(),
       source: 'docker',
       level: 'info',
-      service: '3x-ui',
-      message: '[VLESS] Client authenticated successfully (user_id: 14, inbound: 443/Reality)',
-      details: { protocol: 'vless', inbound: 'reality' }
+      service: 'web',
+      message: 'Application request authenticated successfully.',
+      details: { component: 'web' }
     },
     {
       id: 'log-7',
@@ -521,8 +521,8 @@ export class MockLogsProvider implements LogsProvider {
       timestamp: new Date(Date.now() - 680 * 1000).toISOString(),
       source: 'docker',
       level: 'info',
-      service: 'glances',
-      message: 'REST API polled by monitoring client (127.0.0.1), 200 OK',
+      service: 'cache',
+      message: 'Health endpoint polled by local monitoring client, 200 OK',
       details: { endpoint: '/api/3/quicklook' }
     },
     {
@@ -531,7 +531,7 @@ export class MockLogsProvider implements LogsProvider {
       source: 'systemd',
       level: 'info',
       service: 'ssh.service',
-      message: 'Accepted publickey for admin from 93.175.29.4 port 54120 ssh2: RSA SHA256:qZ91fA...',
+      message: 'Accepted public-key authentication for operator from 203.0.113.70 port 54120 ssh2.',
       details: { user: 'admin', auth: 'publickey' }
     },
     {
@@ -549,8 +549,8 @@ export class MockLogsProvider implements LogsProvider {
       source: 'docker',
       level: 'warning',
       service: 'homeassistant',
-      message: 'Sensor "bedroom_air_quality" took longer than 10.0 seconds to update (timeout handled)',
-      details: { entity: 'sensor.bedroom_air_quality' }
+      message: 'A monitored sensor took longer than 10.0 seconds to update (timeout handled).',
+      details: { entity: 'sensor.example' }
     }
   ];
 
