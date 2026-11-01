@@ -60,19 +60,6 @@ SCC publishes its web port on 127.0.0.1:3000 of the **server**. Therefore:
 - Nginx or Caddy running on the same VPS can reach SCC at http://127.0.0.1:3000.
 - Another computer on the internet cannot connect directly to the server's port 3000.
 
-### What does 0.0.0.0 mean here?
-
-Inside the Docker container, the Node.js application listens on 0.0.0.0:3000. This means it accepts connections on the container's network interfaces.
-
-That does **not** make it publicly accessible. Docker publishes the container port on the host as follows:
-
-~~~yaml
-ports:
-  - "127.0.0.1:3000:3000"
-~~~
-
-The left side is the host address and port. The right side is the container port. The host-side binding is restricted to loopback. Do not change it to 0.0.0.0:3000:3000.
-
 ### Ports used by SCC
 
 | Port | Purpose | Publicly reachable? |
@@ -159,7 +146,7 @@ Do not enable UFW remotely until you have confirmed that your SSH port is allowe
 
 ## 4. Install SCC
 
-The public one-command installer will become usable after the source repository, GitHub Release archive and GHCR image have been published publicly. Until then, the command below is a preview and cannot complete successfully.
+Install SCC with the following command:
 
 ~~~bash
 curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo bash

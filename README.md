@@ -57,7 +57,7 @@ Target platform: **Ubuntu 24.04 LTS**, <code>amd64</code> or <code>arm64</code>,
 
 The installer can install Docker Engine if it is not present and no conflicting container runtime is detected. It downloads a prebuilt image from GitHub Container Registry; Node.js and npm are not required on the target server.
 
-The one-command installer will become usable after the source repository, a GitHub Release and the corresponding GHCR image have been published publicly. Until then, the command is shown for reference only:
+Install SCC with the following command:
 
 ~~~bash
 curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo bash
@@ -160,7 +160,7 @@ SCC — это панель наблюдения, а не полноценная
 
 Установщик может установить Docker Engine, если он отсутствует и не обнаружены конфликтующие компоненты другого контейнерного окружения. Образ приложения скачивается из GitHub Container Registry. Устанавливать Node.js и npm на целевой сервер не требуется.
 
-Установка одной командой станет доступна после публичной публикации исходного репозитория, GitHub Release и соответствующего образа GHCR. До этого команда приведена только для ознакомления:
+Установите SCC одной командой:
 
 ~~~bash
 curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo bash
