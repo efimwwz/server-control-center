@@ -40,7 +40,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 * **Система:** Все ключевые службы функционируют штатно.
 * **Нагрузка CPU:** ${system ? `${system.cpu.usagePercent}%` : '24.5%'} — в пределах нормы.
 * **Память:** ${system ? `${system.ram.usagePercent}%` : '51.2%'} от 8.0 GB.
-* **Docker:** ${docker ? `${docker.running}/${docker.total}` : '4/4'} контейнеров онлайн .
+* **Docker:** ${docker ? `${docker.running}/${docker.total}` : '4/4'} контейнеров онлайн.
 * **Nginx:** Активных соединений ${nginx?.activeConnections ?? 42}, критических сбоев нет.
 
 Вы можете задать любой вопрос о состоянии сервера или выбрать один из готовых сценариев ниже.`,
