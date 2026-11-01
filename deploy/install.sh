@@ -171,6 +171,21 @@ if [[ $ready -ne 1 ]]; then
   exit 1
 fi
 
+healthy=0
+for _ in $(seq 1 60); do
+  if [[ "$(docker inspect -f '{{.State.Health.Status}}' server-control-center 2>/dev/null || true)" == "healthy" ]]; then
+    healthy=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ $healthy -ne 1 ]]; then
+  docker compose -f "$APP/docker-compose.yml" logs --tail=60
+  echo "Docker healthcheck did not become healthy."
+  exit 1
+fi
+
 COMPLETE=1
 trap - EXIT
 echo "Installation complete (version $VERSION). Local panel: http://127.0.0.1:3000"
