@@ -56,15 +56,17 @@ if ! command -v docker >/dev/null 2>&1; then
   if systemctl list-unit-files --no-legend docker.service 2>/dev/null | grep -q . || [[ -S /var/run/docker.sock ]]; then
     fail "A Docker service/socket already exists but the Docker CLI is missing. Refusing to install over an existing container runtime."
   fi
-fi
 
-if ! command -v docker >/dev/null 2>&1; then
   if systemctl is-active --quiet containerd.service 2>/dev/null; then
     fail "containerd is already active. Refusing to install Docker Engine over an existing container runtime."
   fi
-  for package in containerd containerd.io; do
+
+  # Docker's official packages conflict with distribution-provided Docker,
+  # containerd and runc packages. Never remove or replace an existing runtime.
+  for package in docker.io docker-doc docker-compose docker-compose-v2 \
+    docker-buildx podman-docker containerd containerd.io runc; do
     if dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null | grep -Fxq installed; then
-      fail "Package $package is already installed. Refusing to replace or reconfigure the existing container runtime."
+      fail "Conflicting runtime package $package is already installed. Refusing to replace or reconfigure the existing container runtime."
     fi
   done
 fi
