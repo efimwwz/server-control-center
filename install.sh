@@ -38,6 +38,25 @@ if [[ "$MISSING_UTILS" -eq 1 ]]; then
   DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl python3 tar coreutils iproute2
 fi
 
+NGINX_STATUS_CONF=/etc/nginx/conf.d/scc-nginx-status.conf
+if [[ -e "$NGINX_STATUS_CONF" || -L "$NGINX_STATUS_CONF" ]]; then
+  fail "SCC Nginx status configuration already exists: $NGINX_STATUS_CONF. Refusing to overwrite."
+fi
+
+if systemctl is-active --quiet nginx 2>/dev/null; then
+  command -v nginx >/dev/null 2>&1 || fail "Nginx is active but the nginx command is missing."
+  nginx -t || fail "Existing Nginx configuration is invalid. Fix it before installing SCC."
+  if ss -Hltn '( sport = :8099 )' 2>/dev/null | grep -q .; then
+    fail "TCP port 8099 is already occupied. SCC needs this local port for Nginx stub_status."
+  fi
+fi
+
+UNIT_DROPIN_DIR=/etc/systemd/system/scc-agent.service.d
+if [[ -d "$UNIT_DROPIN_DIR" ]] &&
+   find "$UNIT_DROPIN_DIR" -mindepth 1 -maxdepth 1 \( -type f -o -type l \) -print -quit | grep -q .; then
+  fail "Systemd drop-ins already exist in $UNIT_DROPIN_DIR. Review them before installing SCC."
+fi
+
 for path in \
   /opt/server-control-center \
   /opt/scc-agent \
