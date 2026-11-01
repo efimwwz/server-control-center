@@ -216,15 +216,23 @@ sudo systemctl enable --now nginx
 sudo systemctl status nginx
 ~~~
 
-### Step 2 — Create a virtual host
+### Step 2 — Create a temporary HTTP virtual host for certificate validation
 
-Create a new configuration file:
+**Do not proxy the SCC dashboard over public HTTP.** First, expose only the certificate-validation path. The dashboard will remain unavailable through the domain until HTTPS and password protection are configured.
+
+Create the webroot used for ACME HTTP validation:
+
+~~~bash
+sudo install -d -o www-data -g www-data -m 0755 /var/www/letsencrypt/.well-known/acme-challenge
+~~~
+
+Create a new Nginx configuration file:
 
 ~~~bash
 sudo nano /etc/nginx/sites-available/scc.example.com
 ~~~
 
-Start with this HTTP configuration. Replace scc.example.com with your real domain:
+Replace scc.example.com with your real domain:
 
 ~~~nginx
 server {
@@ -232,17 +240,15 @@ server {
     listen [::]:80;
     server_name scc.example.com;
 
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        allow all;
+    }
+
+    # Keep the dashboard closed until HTTPS and authentication are ready.
     location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_connect_timeout 5s;
-        proxy_read_timeout 60s;
+        return 404;
     }
 }
 ~~~
@@ -261,7 +267,7 @@ If the symbolic link already exists, do not create it again. If Nginx reports a 
 
 The domain's DNS record must point to this VPS, and the server must be reachable from the internet on TCP port 80. Both the host firewall and the provider firewall must allow the validation request.
 
-The following uses Certbot's recommended Snap installation method for Ubuntu. If you already have Certbot installed, check its installation source before installing another copy.
+The following uses Certbot's recommended Snap installation method for Ubuntu. If you already have Certbot installed, check its installation source first. Do not keep competing Snap and apt installations.
 
 ~~~bash
 sudo apt update
@@ -275,23 +281,23 @@ Make the Certbot command available in the usual path. If the file already exists
 sudo ln -s /snap/bin/certbot /usr/local/bin/certbot
 ~~~
 
-Request and install the certificate:
+Request the certificate and let Certbot configure HTTPS and the HTTP-to-HTTPS redirect:
 
 ~~~bash
-sudo certbot --nginx -d scc.example.com
+sudo certbot --nginx --redirect -d scc.example.com
 ~~~
 
-Follow the prompts. Choose the HTTP-to-HTTPS redirect if offered. Certbot will update the Nginx configuration to use the certificate.
+Follow the prompts. Certbot will add the certificate configuration to Nginx. The dashboard is still not proxied by the sample HTTP server above; you will add the authenticated HTTPS proxy in the next step.
 
-Test renewal:
+Test automatic renewal:
 
 ~~~bash
 sudo certbot renew --dry-run
 ~~~
 
-### Step 4 — Add password protection
+### Step 4 — Add password protection and the HTTPS reverse proxy
 
-SCC does not have its own login page. Add authentication at Nginx.
+SCC does not have its own login page. Add authentication at Nginx **before** forwarding requests to SCC.
 
 Install the password-file utility:
 
@@ -314,14 +320,7 @@ sudo chown root:www-data /etc/nginx/.htpasswd-scc
 sudo chmod 640 /etc/nginx/.htpasswd-scc
 ~~~
 
-Open the Nginx configuration that Certbot created. In the HTTPS server block for scc.example.com, add these two directives inside the location / block:
-
-~~~nginx
-auth_basic "Server Control Center";
-auth_basic_user_file /etc/nginx/.htpasswd-scc;
-~~~
-
-The HTTPS location block should look similar to this:
+Open the Nginx configuration for scc.example.com. Certbot has created an HTTPS server block that listens on port 443. Inside that HTTPS server block, create or replace its location / block with the following:
 
 ~~~nginx
 location / {
@@ -336,12 +335,15 @@ location / {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
+    # Do not pass the reverse-proxy login credentials to the SCC application.
+    proxy_set_header Authorization "";
+
     proxy_connect_timeout 5s;
     proxy_read_timeout 60s;
 }
 ~~~
 
-Keep the certificate directives and HTTP-to-HTTPS redirect that Certbot generated. Do not replace the whole Certbot configuration with this example.
+Keep the certificate directives and HTTP-to-HTTPS redirect that Certbot generated. Do not replace the whole Certbot configuration with this location block. The port-80 server should continue to redirect normal requests to HTTPS; Certbot will handle its ACME validation path during renewal.
 
 Test and reload Nginx:
 
