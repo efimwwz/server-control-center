@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { apiRouter } from './server/apiRoutes.js';
 
 dotenv.config();
 
@@ -10,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
+  const { apiRouter } = await import('./server/apiRoutes.js');
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   const isDev = process.env.NODE_ENV !== 'production';
