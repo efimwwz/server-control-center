@@ -399,7 +399,7 @@ Caddy часто проще для новой установки: при пра�
 ### Шаг 1. Установите Caddy из официального репозитория Ubuntu
 
 ~~~bash
-sudo apt install --yes debian-keyring debian-archive-keyring apt-transport-https curl
+sudo apt install --yes debian-keyring debian-archive-keyring apt-transport-https curl gnupg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
 sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
@@ -438,7 +438,9 @@ scc.example.com {
         sccadmin REPLACE_WITH_THE_GENERATED_HASH
     }
 
-    reverse_proxy 127.0.0.1:3000
+    reverse_proxy 127.0.0.1:3000 {
+        header_up -Authorization
+    }
 }
 ~~~
 
