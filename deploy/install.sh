@@ -83,6 +83,17 @@ fi
 for path in "$APP" "$AGENT" "$UNIT" "$SOCKET_DIR"; do
   [[ ! -e "$path" ]] || { echo "Refusing to overwrite existing path: $path"; exit 1; }
 done
+UNIT_DIR=/etc/systemd/system/scc-agent.service.d
+if [[ -d "$UNIT_DIR" ]] &&
+   find "$UNIT_DIR" -mindepth 1 -maxdepth 1 \( -type f -o -type l \) -print -quit | grep -q .; then
+  echo "Systemd drop-ins already exist in $UNIT_DIR; refusing to install."
+  exit 1
+fi
+if [[ $NGINX_ACTIVE -eq 1 ]] &&
+   ss -Hltn '( sport = :8099 )' | grep -q .; then
+  echo "TCP port 8099 is already occupied; SCC needs it for local Nginx statistics."
+  exit 1
+fi
 systemctl list-unit-files --no-legend scc-agent.service 2>/dev/null |
   grep -q . && { echo "scc-agent.service already exists; refusing."; exit 1; } || true
 docker ps -a --format '{{.Names}}' | grep -Fxq server-control-center &&
