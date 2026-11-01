@@ -27,11 +27,11 @@ Server Control Center (SCC) is a self-hosted monitoring dashboard for Ubuntu ser
 
 ## Supported operating systems
 
-The public one-command installer officially supports **Ubuntu Server 24.04 LTS only**, on `amd64` and `arm64`.
+The public one-command installer officially supports **Ubuntu 24.04 LTS only (the Server edition is recommended)**, on `amd64` and `arm64`.
 
 | Operating system | Current status |
 |---|---|
-| Ubuntu Server 24.04 LTS | Supported |
+| Ubuntu 24.04 LTS (Server edition recommended) | Supported |
 | Ubuntu 22.04 / 26.04 and other Ubuntu releases | Not currently supported or tested |
 | Debian 12 / 13 | Not currently supported; installer adaptation is required |
 | Linux Mint, Pop!_OS and other Ubuntu/Debian derivatives | Not officially supported or tested |
