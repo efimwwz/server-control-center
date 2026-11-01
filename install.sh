@@ -30,12 +30,12 @@ command -v apt-get >/dev/null || fail "apt-get is required."
 command -v dpkg >/dev/null || fail "dpkg is required."
 
 MISSING_UTILS=0
-for cmd in curl python3 tar sha256sum ss install; do
+for cmd in curl python3 tar sha256sum ss install ping; do
   if ! command -v "$cmd" >/dev/null 2>&1; then MISSING_UTILS=1; fi
 done
 if [[ "$MISSING_UTILS" -eq 1 ]]; then
   apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl python3 tar coreutils iproute2
+  DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl python3 tar coreutils iproute2 iputils-ping
 fi
 
 NGINX_STATUS_CONF=/etc/nginx/conf.d/scc-nginx-status.conf
