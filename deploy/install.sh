@@ -121,6 +121,7 @@ install -m 0644 "$SRC/.env.example" "$APP/.env.example"
 cat > "$APP/.env" <<EOF
 SCC_VERSION=$VERSION
 METRICS_PROVIDER=agent
+TRUST_PROXY=0
 GEMINI_API_KEY=
 EOF
 chmod 0600 "$APP/.env"
