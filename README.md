@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/
 Read the complete guide before installing:
 
 - [Installation, localhost, SSH tunnel, Nginx, Caddy, HTTPS and authentication](INSTALL.md)
-- [Русская документация](README.ru.md)
+- [Russian documentation](README.ru.md)
 
 ## Security in brief
 
