@@ -104,7 +104,7 @@ apiRouter.get(
     res.json({
       status: 'ok',
       app: 'Server Control Center',
-      version: '1.1.0',
+      version: '1.1.1',
       mode: providerMode,
       timestamp: new Date().toISOString(),
       geminiConfigured: !!(
@@ -333,6 +333,7 @@ apiRouter.get(
 // POST /api/ai/analyze
 apiRouter.post(
   '/ai/analyze',
+  aiRateLimiter,
   async (req: Request, res: Response) => {
     try {
       const { question } = req.body;
