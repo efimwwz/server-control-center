@@ -33,23 +33,14 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     { question: string; response: AiAnalyzeResponse }[]
   >([
     {
-      question: 'Сводка состояния сервера',
+      question: 'Добро пожаловать в Server Control Center',
       response: {
-        answer: `### 🛡️ Сводка состояния сервера Ubuntu 24.04 LTS
+        answer: `Я могу помочь разобрать текущее состояние сервера, Docker-контейнеров, Nginx, сетевые показатели и последние события в логах.
 
-* **Система:** Все ключевые службы функционируют штатно.
-* **Нагрузка CPU:** ${system ? `${system.cpu.usagePercent}%` : '24.5%'} — в пределах нормы.
-* **Память:** ${system ? `${system.ram.usagePercent}%` : '51.2%'} от 8.0 GB.
-* **Docker:** ${docker ? `${docker.running}/${docker.total}` : '4/4'} контейнеров онлайн.
-* **Nginx:** Активных соединений ${nginx?.activeConnections ?? 42}, критических сбоев нет.
-
-Вы можете задать любой вопрос о состоянии сервера или выбрать один из готовых сценариев ниже.`,
+Выберите один из быстрых вопросов ниже или введите свой вопрос. Для анализа будут использованы данные, доступные текущей установке.`,
         timestamp: new Date().toISOString(),
-        modelUsed: 'Server Diagnostic Analyzer (Gemini 3.8 Flash)',
-        insights: [
-          { type: 'ok', summary: 'Система стабильна' },
-          { type: 'ok', summary: 'Docker контейнеры в норме' }
-        ]
+        modelUsed: 'Ready',
+        insights: []
       }
     }
   ]);
