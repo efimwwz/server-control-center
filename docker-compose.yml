@@ -1,27 +1,22 @@
 services:
   server-control-center:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/efimwwz/server-control-center:${SCC_VERSION:-1.1.1}
     container_name: server-control-center
     restart: unless-stopped
+    init: true
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-
-      - PORT=3000
-      - NODE_ENV=production
-      # Providers: agent (host-agent), linux (direct host), mock (demo)
-      - METRICS_PROVIDER=${METRICS_PROVIDER:-agent}
+      PORT: "3000"
+      NODE_ENV: production
+      METRICS_PROVIDER: ${METRICS_PROVIDER:-agent}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
       - /run/scc-agent:/run/scc-agent:ro
-
-    # For live Ubuntu VPS host monitoring, uncomment the following volume mounts:
-    # volumes:
-    #   - /proc:/proc:ro
-    #   - /sys:/sys:ro
-    #   - /etc/os-release:/etc/os-release:ro
-    #   - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
