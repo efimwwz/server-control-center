@@ -14,3 +14,6 @@
 - Added opt-in trusted reverse-proxy handling.
 - Added systemd-managed runtime directory for the host-agent.
 - Improved uninstall cleanup for the host-agent socket directory.
+- Removed the obsolete partial Linux provider; production defaults to the real host-agent and mock mode remains for development/demo.
+- Replaced infrastructure-specific mock containers, hostnames, IP addresses and log examples with generic test data.
+- Added an AI data-transfer notice and documented external network telemetry destinations.
