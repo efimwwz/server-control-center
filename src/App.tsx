@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { Header } from './components/Header';
 import { DashboardView } from './views/DashboardView';
@@ -49,6 +49,7 @@ export default function App() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
+  const refreshInProgress = useRef(false);
 
   const handleServerNameChange = (name: string) => {
     setServerDisplayName(name);
@@ -67,6 +68,8 @@ export default function App() {
 
   // Fetch all live data
   const fetchData = useCallback(async () => {
+    if (refreshInProgress.current) return;
+    refreshInProgress.current = true;
     try {
       setIsLoading(true);
       const [sysRes, docRes, ngxRes, srvRes, netRes, hltRes, secRes] = await Promise.allSettled([
@@ -91,6 +94,7 @@ export default function App() {
     } catch (err) {
       console.error('Failed to fetch monitoring metrics:', err);
     } finally {
+      refreshInProgress.current = false;
       setIsLoading(false);
     }
   }, []);
