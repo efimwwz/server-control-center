@@ -543,7 +543,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({
                     "status": "ok",
                     "agent": "scc-agent",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "readOnly": True,
                 })
 
