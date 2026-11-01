@@ -96,5 +96,18 @@ fi
 
 rm -rf -- "$AGENT" "$APP"
 
+# Remove only the known SCC socket. Preserve an unexpected non-empty runtime
+# directory rather than deleting files that another process may have placed there.
+if [[ -S /run/scc-agent/agent.sock ]]; then
+  rm -f /run/scc-agent/agent.sock
+fi
+if [[ -d /run/scc-agent ]]; then
+  if find /run/scc-agent -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
+    echo "Keeping non-empty runtime directory /run/scc-agent."
+  else
+    rmdir /run/scc-agent
+  fi
+fi
+
 echo "Uninstall complete. Docker images were left intact."
 echo "Backup: $BACKUP"
