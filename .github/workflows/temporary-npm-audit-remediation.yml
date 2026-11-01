@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   remediate:
-    if: github.event.head_commit.message == 'ci: remediate npm audit'
     runs-on: ubuntu-latest
     steps:
       - name: Check out main
