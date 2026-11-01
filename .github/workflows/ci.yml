@@ -40,6 +40,36 @@ jobs:
       - name: Build Docker image
         run: docker build --tag server-control-center:ci .
 
+      - name: Smoke test production container
+        run: |
+          set -euo pipefail
+          cleanup() { docker rm -f scc-smoke-test >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run -d --name scc-smoke-test \
+            -p 127.0.0.1:3000:3000 \
+            -e NODE_ENV=production \
+            -e METRICS_PROVIDER=mock \
+            server-control-center:ci
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health -o /tmp/scc-health.json; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          node -e 'const h=require("/tmp/scc-health.json"); if(h.status!=="ok" || h.version!=="1.1.1" || h.mode!=="mock") process.exit(1)'
+
+          curl -fsS http://127.0.0.1:3000/api/system >/dev/null
+          curl -fsS http://127.0.0.1:3000/api/docker >/dev/null
+          curl -fsS http://127.0.0.1:3000/api/network >/dev/null
+          curl -fsS http://127.0.0.1:3000/api/services >/dev/null
+          curl -fsS -X POST http://127.0.0.1:3000/api/ai/analyze \
+            -H 'Content-Type: application/json' \
+            -d '{"question":"Give me a short server overview"}' >/dev/null
+
       - name: Check shell scripts
         run: bash -n install.sh deploy/install.sh deploy/uninstall.sh
 
