@@ -70,6 +70,86 @@ jobs:
             -H 'Content-Type: application/json' \
             -d '{"question":"Give me a short server overview"}' >/dev/null
 
+      - name: Test non-root access to the host-agent Unix socket
+        run: |
+          set -euo pipefail
+          agent_dir="$(mktemp -d)"
+          agent_pid=""
+          cleanup() {
+            docker rm -f scc-agent-socket-test >/dev/null 2>&1 || true
+            if [[ -n "$agent_pid" ]]; then kill "$agent_pid" >/dev/null 2>&1 || true; fi
+            rm -rf "$agent_dir"
+          }
+          trap cleanup EXIT
+
+          sudo chown "$(id -u):0" "$agent_dir"
+          chmod 0750 "$agent_dir"
+
+          cat > "$agent_dir/mock_agent.py" <<'PY'
+          import json
+          import os
+          import socketserver
+          import sys
+          from http.server import BaseHTTPRequestHandler
+
+          payload = {
+              "info": {"hostname": "ci-agent-host"},
+              "cpu": {"usagePercent": 12.0},
+              "ram": {"usagePercent": 25.0},
+              "network": {"rxBytesSec": 1024, "txBytesSec": 512},
+              "loadAvg": {"load1m": 0.1},
+          }
+
+          class Handler(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  body = json.dumps(payload).encode()
+                  self.send_response(200)
+                  self.send_header("Content-Type", "application/json")
+                  self.send_header("Content-Length", str(len(body)))
+                  self.end_headers()
+                  self.wfile.write(body)
+
+              def log_message(self, *_args):
+                  pass
+
+          server = socketserver.UnixStreamServer(sys.argv[1], Handler)
+          os.chmod(sys.argv[1], 0o660)
+          server.serve_forever()
+          PY
+
+          python3 "$agent_dir/mock_agent.py" "$agent_dir/agent.sock" >/tmp/scc-mock-agent.log 2>&1 &
+          agent_pid=$!
+
+          socket_ready=0
+          for _ in $(seq 1 20); do
+            if [[ -S "$agent_dir/agent.sock" ]]; then socket_ready=1; break; fi
+            sleep 0.25
+          done
+          test "$socket_ready" -eq 1
+          sudo chgrp 0 "$agent_dir/agent.sock"
+          chmod 0660 "$agent_dir/agent.sock"
+
+          docker run -d --name scc-agent-socket-test \
+            -p 127.0.0.1:3001:3000 \
+            -v "$agent_dir:/run/scc-agent:ro" \
+            -e NODE_ENV=production \
+            -e METRICS_PROVIDER=agent \
+            server-control-center:ci
+
+          test "$(docker exec scc-agent-socket-test id -u)" = "1000"
+          test "$(docker exec scc-agent-socket-test id -g)" = "0"
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3001/api/system -o /tmp/scc-agent-system.json; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          node -e 'const d=require("/tmp/scc-agent-system.json"); if(d.info?.hostname!=="ci-agent-host") process.exit(1)'
+
       - name: Check shell scripts
         run: bash -n install.sh deploy/install.sh deploy/uninstall.sh
 
