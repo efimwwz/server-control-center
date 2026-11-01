@@ -50,7 +50,7 @@ curl -fsS http://127.0.0.1:3000/api/health
 
 ## Optional Gemini integration
 
-Edit `/opt/server-control-center/.env` and set `GEMINI_API_KEY`. Selected telemetry and logs, together with the prompt, are sent to Google Gemini when AI analysis is used.
+Edit `/opt/server-control-center/.env` and set `GEMINI_API_KEY`. Selected telemetry and logs, together with the prompt, are sent to Google Gemini when AI analysis is used. Logs may contain IP addresses, hostnames, URLs, request paths, service names or identifiers; only selected query-string secrets are masked. Review the data before enabling AI. The network collector uses api.ipify.org to resolve public IPv4 and pings 1.1.1.1 for latency/loss.
 
 ## Uninstall
 
