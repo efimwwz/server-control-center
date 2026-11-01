@@ -40,7 +40,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 * **Система:** Все ключевые службы функционируют штатно.
 * **Нагрузка CPU:** ${system ? `${system.cpu.usagePercent}%` : '24.5%'} — в пределах нормы.
 * **Память:** ${system ? `${system.ram.usagePercent}%` : '51.2%'} от 8.0 GB.
-* **Docker:** ${docker ? `${docker.running}/${docker.total}` : '4/4'} контейнеров онлайн (\`3x-ui\`, \`n8n\`, \`homeassistant\`, \`glances\`).
+* **Docker:** ${docker ? `${docker.running}/${docker.total}` : '4/4'} контейнеров онлайн .
 * **Nginx:** Активных соединений ${nginx?.activeConnections ?? 42}, критических сбоев нет.
 
 Вы можете задать любой вопрос о состоянии сервера или выбрать один из готовых сценариев ниже.`,
@@ -132,6 +132,18 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             <Globe className="h-3.5 w-3.5 text-cyan-400" />
             <span>Nginx: {nginx?.activeConnections || 42} conn</span>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-zinc-300">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+          <p>
+            При настроенном <code className="text-amber-300">GEMINI_API_KEY</code> отправленный вопрос,
+            выбранные метрики сервера и часть последних логов передаются Google Gemini для анализа.
+            Без ключа используется локальный диагностический fallback. Не отправляйте через AI
+            пароли, токены и другие секреты.
+          </p>
         </div>
       </div>
 
