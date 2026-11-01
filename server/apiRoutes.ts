@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { createMockProviderBundle } from './providers/mockMetricsProvider.js';
-import { createLinuxProviderBundle } from './providers/linuxMetricsProvider.js';
 import { analyzeServerWithAi } from './geminiService.js';
 import { ProviderBundle } from './providers/metricsProvider.js';
 import {
@@ -13,13 +12,20 @@ import {
   AgentSecurityMetricsProvider,
 } from './providers/agentMetricsProvider.js';
 
-// Select active provider bundle based on environment
-const providerMode = process.env.METRICS_PROVIDER || 'mock';
+// Production must use the host agent. Mock data is reserved for local
+// development and explicit demo use; the old "linux" adapter returned mock
+// data for most metrics and is intentionally no longer selectable.
+const providerMode =
+  process.env.METRICS_PROVIDER ||
+  (process.env.NODE_ENV === 'production' ? 'agent' : 'mock');
 
-const providers: ProviderBundle =
-  providerMode === 'linux'
-    ? createLinuxProviderBundle()
-    : createMockProviderBundle();
+if (providerMode !== 'agent' && providerMode !== 'mock') {
+  throw new Error(
+    'Invalid METRICS_PROVIDER. Supported values are "agent" and "mock".',
+  );
+}
+
+const providers: ProviderBundle = createMockProviderBundle();
 
 // Real host-agent providers
 const agentSystem = new AgentSystemMetricsProvider();
