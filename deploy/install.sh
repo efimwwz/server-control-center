@@ -175,4 +175,3 @@ COMPLETE=1
 trap - EXIT
 echo "Installation complete (version $VERSION). Local panel: http://127.0.0.1:3000"
 echo "Configure your own HTTPS reverse proxy and authentication before exposing the panel."
-echo "Configure the target server's reverse proxy separately if remote access is needed."
