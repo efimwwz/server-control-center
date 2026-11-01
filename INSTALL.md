@@ -44,8 +44,8 @@ Do not publish port 3000 directly. For permanent access, configure HTTPS and aut
 ## Operations
 
 ```bash
-docker compose -f /opt/server-control-center/docker-compose.yml ps
-docker compose -f /opt/server-control-center/docker-compose.yml logs --tail 100
+docker compose --project-directory /opt/server-control-center -f /opt/server-control-center/docker-compose.yml ps
+docker compose --project-directory /opt/server-control-center -f /opt/server-control-center/docker-compose.yml logs --tail 100
 systemctl status scc-agent.service
 curl -fsS http://127.0.0.1:3000/api/health
 ```
