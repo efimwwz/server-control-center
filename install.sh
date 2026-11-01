@@ -29,12 +29,27 @@ fail() {
 command -v apt-get >/dev/null || fail "apt-get is required."
 command -v dpkg >/dev/null || fail "dpkg is required."
 
-for path in   /opt/server-control-center   /opt/scc-agent   /etc/systemd/system/scc-agent.service   /run/scc-agent; do
+MISSING_UTILS=0
+for cmd in curl python3 tar sha256sum ss install; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then MISSING_UTILS=1; fi
+done
+if [[ "$MISSING_UTILS" -eq 1 ]]; then
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl python3 tar coreutils iproute2
+fi
+
+for path in \
+  /opt/server-control-center \
+  /opt/scc-agent \
+  /etc/systemd/system/scc-agent.service \
+  /run/scc-agent; do
   [[ ! -e "$path" && ! -L "$path" ]] || fail "Existing SCC resource found: $path. Refusing to overwrite."
 done
 
-if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -Fxq server-control-center; then
-  fail "A container named server-control-center already exists. Refusing to overwrite."
+if command -v docker >/dev/null 2>&1; then
+  if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -Fxq server-control-center; then
+    fail "A container named server-control-center already exists. Refusing to overwrite."
+  fi
 fi
 
 if ss -Hltn '( sport = :3000 )' 2>/dev/null | grep -q .; then
@@ -47,20 +62,13 @@ case "$ARCH" in
   *) fail "Unsupported architecture: $ARCH (supported: amd64, arm64)." ;;
 esac
 
-if command -v curl >/dev/null 2>&1; then
-  :
-else
-  apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y curl ca-certificates
-fi
-
 echo "========== DOCKER CHECK =========="
 if command -v docker >/dev/null 2>&1; then
-  docker compose version >/dev/null 2>&1 || {
-    echo "Docker CLI exists but the Compose plugin is missing."
-    echo "Install docker-compose-plugin using Docker's official apt repository, then run this installer again."
-    exit 1
-  }
+  if ! docker compose version >/dev/null 2>&1; then
+    echo "Docker CLI exists but the Compose plugin is missing. Installing Ubuntu Compose v2 without restarting Docker."
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2
+  fi
   systemctl is-active --quiet docker || {
     echo "Docker is installed but inactive. The installer will not start or restart an existing Docker daemon."
     echo "Start Docker yourself, then run this installer again."
