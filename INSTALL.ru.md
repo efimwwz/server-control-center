@@ -2,7 +2,7 @@
 
 Это руководство объясняет, как установить Server Control Center (SCC), что означает localhost и как безопасно открывать панель через SSH, Nginx или Caddy.
 
-[English guide](INSTALL.md) · [Описание проекта](README.ru.md)
+[Руководство на английском](INSTALL.md) · [Описание проекта](README.ru.md)
 
 ---
 
