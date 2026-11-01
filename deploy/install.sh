@@ -55,7 +55,7 @@ rollback() {
 . /etc/os-release
 [[ "${ID:-}" == ubuntu ]] || { echo "Supported target: Ubuntu."; exit 1; }
 
-for cmd in docker python3 systemctl tar install ss; do
+for cmd in docker python3 systemctl tar install ss ping; do
   command -v "$cmd" >/dev/null || { echo "Missing command: $cmd"; exit 1; }
 done
 docker compose version >/dev/null
