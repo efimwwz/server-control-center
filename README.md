@@ -67,7 +67,7 @@ cd /opt/server-control-center
 docker compose up -d --no-deps --force-recreate server-control-center
 ```
 
-When this option is enabled, the AI assistant sends the user's question and selected telemetry/log context to Google Gemini. Review your data-handling requirements before configuring an API key.
+When this option is enabled, the AI assistant sends the user's question and selected telemetry/log context to Google Gemini. Review your data-handling requirements before configuring an API key. Logs may contain hostnames, IP addresses, request paths, service/container names and identifiers. Redaction covers only selected common query-string secret parameters and is not a guarantee that all sensitive data is removed. Review logs before enabling AI analysis. The network collector also queries api.ipify.org for the public IPv4 address (cached for five minutes) and sends ICMP echo requests to 1.1.1.1 for latency/loss measurements.
 
 ## Architecture and security
 
