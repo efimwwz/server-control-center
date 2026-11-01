@@ -18,6 +18,8 @@ curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/
 
 The installer downloads the latest release archive and SHA256 checksum from GitHub, verifies the archive, installs Docker Engine if it is missing, installs the host agent, pulls the prebuilt image and checks the health endpoint.
 
+Before using the one-command installer, publish at least one release and make the `ghcr.io/efimwwz/server-control-center` package Public in GitHub Package settings. The first GHCR package publication is private by default; repository visibility does not automatically make it public.
+
 ## Requirements
 
 - Ubuntu 24.04 LTS with systemd.
