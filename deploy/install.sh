@@ -34,7 +34,7 @@ rollback() {
       fi
     fi
     if [[ $COMPOSE_TOUCHED -eq 1 && -f "$APP/docker-compose.yml" ]]; then
-      docker compose -f "$APP/docker-compose.yml" down
+      docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" down
     fi
     if [[ $AGENT_STARTED -eq 1 ]]; then
       systemctl disable --now scc-agent.service
@@ -106,7 +106,7 @@ if find "$SRC" -maxdepth 1 -type f -name '.env*' \
   exit 1
 fi
 
-docker compose -f "$SRC/docker-compose.yml" config --quiet
+docker compose --project-directory "$SRC" -f "$SRC/docker-compose.yml" config --quiet
 
 trap rollback EXIT
 install -d -m 0750 "$APP"
@@ -151,10 +151,10 @@ AGENT_STARTED=1
 systemctl enable --now scc-agent.service
 systemctl is-active --quiet scc-agent.service
 
-docker compose -f "$APP/docker-compose.yml" config --quiet
-docker compose -f "$APP/docker-compose.yml" pull
+docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" config --quiet
+docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" pull
 COMPOSE_TOUCHED=1
-docker compose -f "$APP/docker-compose.yml" up -d --no-build --pull never
+docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" up -d --no-build --pull never
 
 ready=0
 for _ in $(seq 1 30); do
@@ -166,7 +166,7 @@ for _ in $(seq 1 30); do
 done
 
 if [[ $ready -ne 1 ]]; then
-  docker compose -f "$APP/docker-compose.yml" logs --tail=60
+  docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" logs --tail=60
   echo "Health check failed."
   exit 1
 fi
@@ -181,7 +181,7 @@ for _ in $(seq 1 60); do
 done
 
 if [[ $healthy -ne 1 ]]; then
-  docker compose -f "$APP/docker-compose.yml" logs --tail=60
+  docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" logs --tail=60
   echo "Docker healthcheck did not become healthy."
   exit 1
 fi
