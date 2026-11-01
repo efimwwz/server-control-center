@@ -174,7 +174,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="mt-4 space-y-3 text-xs text-zinc-300">
           <p>
             Run this command as an administrator on the server where you want to install the panel.
-            The installer downloads a signed-off GitHub Release archive, verifies its SHA256 checksum,
+            The installer downloads a published GitHub Release archive, verifies its SHA256 checksum,
             installs Docker when needed, and starts the host agent and application.
           </p>
           <div className="flex items-start gap-2">
