@@ -33,5 +33,7 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2"
-  }
+  },
+  "description": "Self-hosted Ubuntu VPS monitoring dashboard with Docker, Nginx, network, logs, security and optional AI diagnostics.",
+  "license": "MIT"
 }
