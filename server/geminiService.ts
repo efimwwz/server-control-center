@@ -139,7 +139,7 @@ ${formattedContext}`
 ${
   context.system.cpu.usagePercent < 50
     ? 'Загрузка процессора находится в безопасном рабочем диапазоне. Пиков не обнаружено, система обрабатывает входящий трафик с большим запасом мощности.'
-    : 'Наблюдается повышенная нагрузка. Рекомендуется проверить активные воркфлоу n8n и входящие соединения 3x-ui.'
+    : 'Наблюдается повышенная нагрузка. Рекомендуется проверить наиболее ресурсоёмкие процессы и входящие соединения.'
 }`;
   } else if (q.includes('контейнер') || q.includes('docker')) {
     answer = `### 🐳 Состояние Docker контейнеров
@@ -156,7 +156,7 @@ ${context.docker.containers
   .join('\n')}
 
 **Рекомендация:**
-Все основные контейнеры (\`3x-ui\`, \`n8n\`, \`homeassistant\`, \`glances\`) функционируют без перезапусков и падений.`;
+Все основные контейнеры функционируют без перезапусков и падений.`;
   } else if (q.includes('nginx') || q.includes('веб') || q.includes('трафик')) {
     const errorRatio = ((context.nginx.statusCodeCounts.code5xx / (context.nginx.totalRequests || 1)) * 100).toFixed(2);
     answer = `### 🌐 Анализ Nginx и веб-сервера
@@ -193,7 +193,7 @@ ${errorLogs
   * **CPU:** ${context.system.cpu.usagePercent}%
   * **RAM:** ${context.system.ram.usagePercent}% (${(context.system.ram.usedBytes / 1e9).toFixed(1)} GB / ${(context.system.ram.totalBytes / 1e9).toFixed(1)} GB)
   * **Диск:** ${context.system.disk.usagePercent}% (${(context.system.disk.usedBytes / 1e9).toFixed(1)} GB / ${(context.system.disk.totalBytes / 1e9).toFixed(1)} GB)
-* **Docker:** ${context.docker.running}/${context.docker.total} контейнеров в статусе UP (\`3x-ui\`, \`n8n\`, \`homeassistant\`, \`glances\`)
+* **Docker:** ${context.docker.running}/${context.docker.total} контейнеров в статусе UP
 * **Службы:** Nginx, Docker, SSH, Cron, Fail2ban работают в штатном режиме.
 
 *Вы можете задать конкретный вопрос, например:*
