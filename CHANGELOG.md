@@ -17,3 +17,4 @@
 - Removed the obsolete partial Linux provider; production defaults to the real host-agent and mock mode remains for development/demo.
 - Replaced infrastructure-specific mock containers, hostnames, IP addresses and log examples with generic test data.
 - Added an AI data-transfer notice and documented external network telemetry destinations.
+- Split English and Russian documentation into separate files and expanded installation guides for localhost, SSH tunnels, Nginx, Caddy, HTTPS and reverse-proxy authentication.
