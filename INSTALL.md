@@ -16,6 +16,8 @@ The public one-command installer currently supports **Ubuntu 24.04 LTS only (Ser
 | Ubuntu 22.04 / 26.04 and other Ubuntu releases | Not supported or tested |
 | Debian 12 / 13 | Not currently supported; adaptation and testing are required |
 | Linux Mint, Pop!_OS and other Ubuntu/Debian derivatives | Not officially supported |
+| Windows / Windows Server | Not supported as a full SCC host; the host-agent is Linux-specific |
+| macOS | Not supported as a full SCC host; Docker Desktop alone does not provide the Linux host metrics expected by the agent |
 | Fedora, Rocky Linux, AlmaLinux, RHEL, openSUSE, Alpine | Not supported by the current installer |
 
 This restriction is intentional: the installer checks for Ubuntu 24.04, uses `apt`, Ubuntu/Docker repository configuration and Ubuntu-specific service/configuration paths. The host-agent also requires systemd and host tools such as Docker CLI, `iproute2`, `ping` and `journalctl`.
