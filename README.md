@@ -1,202 +1,128 @@
-# 🚀 Server Control Center
+# Server Control Center
 
-Современная веб-панель для мониторинга сервера **Ubuntu 24.04 LTS VPS**, Docker-контейнеров, веб-сервера Nginx, системных служб и сетевого состояния со встроенным **AI-ассистентом на базе Google Gemini 3.8 Flash**.
+Server Control Center (SCC) is a self-hosted web dashboard for monitoring an Ubuntu VPS. It collects system, Docker, Nginx, network, service, log and basic host-security telemetry through a separate local host agent.
 
----
+## Features
 
-## 📋 Особенности и возможности
+- **Dashboard:** CPU, RAM, disk, load average, uptime and network throughput.
+- **Docker:** running and stopped containers, resource usage, ports and restart counts.
+- **Nginx:** service state, local `stub_status`, request counters and configured virtual hosts.
+- **Services:** systemd service state, uptime, PID and memory.
+- **Network:** interfaces, gateway, DNS, public IPv4, latency and packet loss.
+- **Logs:** recent Nginx, Docker and systemd events, with basic redaction of common query-string secrets.
+- **Security:** read-only baseline checks for IPv4/IPv6 INPUT policy, Fail2ban, SSH settings and host-agent service hardening.
+- **AI assistant:** optional Google Gemini integration. When configured, the question and selected server telemetry/log context are sent to Google Gemini for analysis.
 
-* **📊 Главный Dashboard:**
-  * Верхняя панель: Hostname, версия Ubuntu 24.04, версия ядра Linux, Uptime, живые часы и статус сервера (*Online / Warning / Critical*).
-  * 6 основных карточек метрик: CPU usage (с температурой и ядрами), RAM usage, Disk usage (NVMe ext4), Load Average (1m, 5m, 15m), входящий трафик Network RX и исходящий трафик Network TX.
-  * 4 интерактивных графика за последний час: CPU, RAM, Network RX/TX, Load Average.
-* **🐳 Docker:**
-  * Отдельная страница со списком всех контейнеров: `3x-ui`, `n8n`, `homeassistant`, `glances`.
-  * Отображение имени, образа, статуса (*UP, STOPPED, RESTARTING, ERROR*), аптайма, потребления CPU и RAM, открытых портов.
-  * Поиск, фильтрация по статусам, модальное окно инспекции контейнера.
-* **🌐 Nginx:**
-  * Статус службы, версия веб-сервера, активные соединения (*reading, writing, waiting*).
-  * Общее число запросов, переданный трафик, счетчики кодов ответа **2xx**, **3xx**, **4xx**, **5xx**.
-  * График интенсивности запросов за последний час и средняя задержка (latency ms).
-  * Список настроенных виртуальных хостов и reverse-proxy (`n8n.myvps.cloud`, `vpn.myvps.cloud`, `home.myvps.cloud`, `glances.myvps.cloud`).
-* **⚙️ Системные службы (Services):**
-  * Мониторинг ключевых демонов: `nginx`, `docker`, `ssh`, `cron`, `fail2ban`, `systemd-resolved`.
-  * Статус (*active / inactive / failed*), Uptime, PID процесса, потребление RAM.
-* **🌍 Сеть (Network):**
-  * Публичный IP-адрес (с быстрым копированием), шлюз по умолчанию (Gateway), DNS-серверы.
-  * Сетевые интерфейсы (`eth0`, `docker0`, `lo`) со счетчиками пакетов, ошибок, MTU и MAC-адресами.
-  * Измерение задержки (RTT / Ping) и процента потерь пакетов (Packet Loss).
-* **📜 Логи (Logs):**
-  * Просмотр последних событий из источников `nginx`, `docker` и `systemd` (journalctl).
-  * Фильтрация по источнику, уровню важности (*info, warning, error*), полнотекстовый поиск.
-  * Возможность паузы/возобновления живой ленты логов и копирования строки.
-* **🤖 AI Assistant (Gemini 3.8 Flash):**
-  * Интеллектуальный помощник системного администратора.
-  * Быстрые вопросы:
-    * *"Почему выросла загрузка CPU?"*
-    * *"Какие контейнеры сейчас работают?"*
-    * *"Есть ли проблемы с Nginx?"*
-    * *"Какие ошибки произошли за последний час?"*
-  * Полный контекст телеметрии автоматически передается серверной модели Gemini без утечки API-ключа в браузер.
-* **🛡️ Безопасность:**
-  * Фронтенд изолирован и **не имеет прямого доступа к shell** или eval.
-  * Встроенный Rate Limiting (ограничение частоты запросов к API).
-  * Санитизация и валидация входящих данных.
-  * CORS-политики и разделение слоев на адаптеры данных.
-* **⚙️ Настройки (Settings):**
-  * Изменение отображаемого имени сервера.
-  * Настройка интервала опроса API (2s, 5s, 10s, 30s).
-  * Переключение тем оформления (*Dark Slate, Midnight OLED, Cyber Matrix*).
+The Security view is a baseline inspection tool, not a vulnerability scanner or an automatic hardening system. SCC does not change firewall, SSH or Fail2ban configuration.
 
----
+## Installation
 
-## 🏗️ Архитектура (Mock / Real Linux Provider)
+Supported target: **Ubuntu 24.04 LTS**, systemd, `amd64` or `arm64`.
 
-Приложение спроектировано по принципу чистой архитектуры с интерфейсами:
+The installer:
+1. Checks operating system, architecture, ports and existing SCC paths.
+2. Installs Docker Engine from Docker's official Ubuntu apt repository if Docker is absent.
+3. Downloads the latest GitHub Release archive and its SHA256 file.
+4. Verifies the archive checksum before extracting it.
+5. Installs the host agent as a systemd service.
+6. Pulls the prebuilt SCC image from GitHub Container Registry.
+7. Starts only the SCC Compose service and verifies application health.
 
-```typescript
-SystemMetricsProvider
-DockerMetricsProvider
-NginxMetricsProvider
-ServicesMetricsProvider
-NetworkMetricsProvider
-LogsProvider
-```
+After this repository and its container image are public, install with:
 
-По умолчанию активен **`MockMetricsProvider`**, генерирующий реалистичную телеметрию Ubuntu 24.04 без прямого подключения к реальному VPS во время разработки.
+\`\`\`bash
+curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo bash
+\`\`\`
 
-### Переключение на реальный Ubuntu VPS (`LinuxSystemMetricsProvider`):
+To pin a version instead of installing the latest:
 
-Без единого изменения во фронтенде:
-1. В файле `.env` или `docker-compose.yml` установите:
-   ```env
-   METRICS_PROVIDER=linux
-   ```
-2. При запуске в Docker смонтируйте пути хоста:
-   ```yaml
-   volumes:
-     - /proc:/proc:ro
-     - /sys:/sys:ro
-     - /etc/os-release:/etc/os-release:ro
-     - /var/run/docker.sock:/var/run/docker.sock:ro
-   ```
+\`\`\`bash
+curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo env SCC_VERSION=1.1.1 bash
+\`\`\`
 
----
+The installer refuses to overwrite existing SCC paths or a container with the SCC container name. If Docker is already installed but inactive, it stops and asks the administrator to start it manually; it does not restart an existing Docker daemon.
 
-## 🔌 API Endpoints
+## Access
 
-Все эндпоинты возвращают структурированный JSON:
+The panel listens on **127.0.0.1:3000 only**. It is not exposed directly to the public network.
 
-| Метод | Путь | Описание |
-|---|---|---|
-| `GET` | `/api/health` | Проверка жизнеспособности сервиса, версия и активный режим |
-| `GET` | `/api/system` | CPU, RAM, Disk, Load Average, Hostname, Uptime, история |
-| `GET` | `/api/docker` | Обзор и список контейнеров (3x-ui, n8n, homeassistant, glances) |
-| `GET` | `/api/nginx` | Соединения, счетчики 2xx/4xx/5xx, трафик, vhosts |
-| `GET` | `/api/network` | Внешний IP, шлюз, DNS, интерфейсы eth0/docker0/lo, ping |
-| `GET` | `/api/services` | Статусы systemd служб (nginx, docker, ssh, cron, fail2ban) |
-| `GET` | `/api/logs` | Журнал логов с фильтрами `?source=&level=&query=&limit=` |
-| `POST` | `/api/ai/analyze` | Анализ состояния сервера моделью Gemini 3.8 Flash |
+Use an SSH tunnel from your workstation:
 
----
+\`\`\`bash
+ssh -N -L 3000:127.0.0.1:3000 USER@SERVER_IP
+\`\`\`
 
-## 💻 Локальный запуск в режиме разработки (VS Code)
+Then open http://127.0.0.1:3000.
 
-### Требования:
-* Node.js 20+ или 22+
-* npm
+For permanent browser access, configure your own HTTPS reverse proxy and authentication. Do not expose port 3000 directly to the internet. Set `TRUST_PROXY=1` only when a trusted reverse proxy is the sole route to the app and the application remains bound to loopback.
 
-### Шаги:
-1. Клонируйте проект и перейдите в директорию:
-   ```bash
-   git clone <repo-url>
-   cd server-control-center
-   ```
-2. Установите зависимости:
-   ```bash
-   npm install
-   ```
-3. Скопируйте файл конфигурации:
-   ```bash
-   cp .env.example .env
-   ```
-   *(При необходимости укажите `GEMINI_API_KEY` в `.env`)*
-4. Запустите full-stack сервер разработки:
-   ```bash
-   npm run dev
-   ```
-5. Откройте в браузере: **`http://localhost:3000`**
+If Nginx is already active during installation, SCC adds a separate localhost-only status endpoint on `127.0.0.1:8099`. Existing Nginx virtual hosts are not rewritten.
 
----
+## Optional AI integration
 
-## 🐳 Запуск через Docker & Docker Compose
+Set `GEMINI_API_KEY` in `/opt/server-control-center/.env`, then recreate only the SCC container:
 
-Приложение полностью подготовлено для запуска одной командой:
+\`\`\`bash
+cd /opt/server-control-center
+docker compose up -d --no-deps --force-recreate server-control-center
+\`\`\`
 
-```bash
-docker compose up -d
-```
+When this option is enabled, the AI assistant sends the user's question and selected telemetry/log context to Google Gemini. Review your data-handling requirements before configuring an API key.
 
-Проверить статус работы контейнера:
-```bash
-docker compose ps
-docker compose logs -f
-```
+## Architecture and security
 
-Остановить контейнер:
-```bash
-docker compose down
-```
+- The web application runs in Docker and has no Docker socket mounted into it.
+- The host agent runs as root because it reads host `/proc`, systemd, logs, Nginx and Docker telemetry.
+- The agent exposes fixed GET-only endpoints over `/run/scc-agent/agent.sock`; POST requests are rejected. It does not expose an arbitrary shell or command API.
+- The Docker CLI used by the host agent is highly privileged. A compromise of the host agent should be treated as a host-level security incident.
+- The agent does not configure or modify firewall, SSH, Fail2ban or other services.
+- The default web binding is localhost. The administrator is responsible for reverse-proxy authentication, TLS, network firewall policy and provider-level firewall settings.
 
----
+## Useful commands
 
-## 📁 Структура проекта
+\`\`\`bash
+# Application status
+docker compose -f /opt/server-control-center/docker-compose.yml ps
 
-```
-.
-├── server/
-│   ├── types.ts                    # Общие TypeScript интерфейсы метрик и сервисов
-│   ├── geminiService.ts            # Серверный модуль Gemini 3.8 Flash с fallback-диагностикой
-│   ├── apiRoutes.ts                # REST API роутер, валидация и rate limiter
-│   └── providers/
-│       ├── metricsProvider.ts      # Абстрактные интерфейсы провайдеров
-│       ├── mockMetricsProvider.ts  # Реалистичный эмулятор Ubuntu 24.04 VPS
-│       └── linuxMetricsProvider.ts # Адаптер чтения /proc, systemctl и docker.sock
-├── src/
-│   ├── components/
-│   │   ├── Header.tsx              # Верхняя панель хоста, uptime, статус и часы
-│   │   ├── Sidebar.tsx             # Навигационное левое меню
-│   │   ├── StatusBadge.tsx         # Цветовые бейджи UP/STOPPED/ERROR/ONLINE
-│   │   └── Charts/
-│   │       ├── AreaChart.tsx       # Интерактивные SVG графики с hover crosshair
-│   │       └── MiniSparkline.tsx   # Компактные микро-графики для карточек
-│   ├── views/
-│   │   ├── DashboardView.tsx       # Сводка, 6 карточек и 4 часовых графика
-│   │   ├── DockerView.tsx          # Таблица контейнеров и инспектор
-│   │   ├── NginxView.tsx           # Статистика Nginx, статусы 2xx/4xx/5xx
-│   │   ├── ServicesView.tsx        # Мониторинг служб systemd
-│   │   ├── NetworkView.tsx         # Сетевые интерфейсы, IP, gateway, пинг
-│   │   ├── LogsView.tsx            # Терминальный просмотрщик логов с поиском
-│   │   ├── AiAssistantView.tsx     # Диалоговый AI-ассистент
-│   │   └── SettingsView.tsx        # Настройки, интервалы и руководство перехода
-│   ├── services/
-│   │   └── api.ts                  # Клиентский типизированный API сервис
-│   ├── types/
-│   │   └── index.ts                # Фронтенд-типы данных
-│   ├── App.tsx                     # Корневой компонент и автообновление
-│   └── main.tsx                    # Точка входа React
-├── server.ts                       # Входная точка Express + Vite middleware
-├── Dockerfile                      # Многоэтапная сборка Docker
-├── docker-compose.yml              # Готовый compose файл
-├── .dockerignore                   # Исключения сборки контейнера
-├── .env.example                    # Пример переменных окружения
-└── README.md                       # Документация проекта
-```
+# Application logs
+docker compose -f /opt/server-control-center/docker-compose.yml logs --tail 100
 
----
+# Host-agent status
+systemctl status scc-agent.service
 
-## 🔒 Заметки по безопасности
+# Health endpoint
+curl -fsS http://127.0.0.1:3000/api/health
 
-* Сервер никогда не раскрывает `GEMINI_API_KEY` в клиентский бандл.
-* Прямой доступ к shell и возможность запуска произвольных bash-команд из браузера полностью отсутствуют.
-* Все запросы к `/api/*` защищены механизмом ограничения частоты (Rate Limiter).
+# Security overview
+curl -fsS http://127.0.0.1:3000/api/security
+\`\`\`
+
+## Uninstall
+
+Run:
+
+\`\`\`bash
+sudo bash /opt/server-control-center/deploy/uninstall.sh
+\`\`\`
+
+The script asks for explicit confirmation and backs up the SCC application, agent, service unit and SCC Nginx status file. It stops/removes only the SCC container and host agent; it does not restart Docker or stop unrelated containers. Docker images are left on disk.
+
+## Development
+
+Requirements: Node.js 22 and npm.
+
+\`\`\`bash
+npm ci
+cp .env.example .env
+npm run lint
+npm run build
+npm run dev
+\`\`\`
+
+The default provider for local development is the mock provider. A production installation uses `METRICS_PROVIDER=agent`.
+
+## Releases
+
+Git tags use the format `vMAJOR.MINOR.PATCH`. The release workflow runs lint/build and Python/shell syntax checks, publishes a multi-architecture image to GHCR, creates a source archive from the tag and attaches the archive plus SHA256 file to the GitHub Release.
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
