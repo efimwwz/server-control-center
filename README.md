@@ -30,15 +30,15 @@ The installer:
 
 After this repository and its container image are public, install with:
 
-\`\`\`bash
+```bash
 curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo bash
-\`\`\`
+```
 
 To pin a version instead of installing the latest:
 
-\`\`\`bash
+```bash
 curl -fsSL https://raw.githubusercontent.com/efimwwz/server-control-center/main/install.sh | sudo env SCC_VERSION=1.1.1 bash
-\`\`\`
+```
 
 The installer refuses to overwrite existing SCC paths or a container with the SCC container name. If Docker is already installed but inactive, it stops and asks the administrator to start it manually; it does not restart an existing Docker daemon.
 
@@ -48,9 +48,9 @@ The panel listens on **127.0.0.1:3000 only**. It is not exposed directly to the 
 
 Use an SSH tunnel from your workstation:
 
-\`\`\`bash
+```bash
 ssh -N -L 3000:127.0.0.1:3000 USER@SERVER_IP
-\`\`\`
+```
 
 Then open http://127.0.0.1:3000.
 
@@ -62,10 +62,10 @@ If Nginx is already active during installation, SCC adds a separate localhost-on
 
 Set `GEMINI_API_KEY` in `/opt/server-control-center/.env`, then recreate only the SCC container:
 
-\`\`\`bash
+```bash
 cd /opt/server-control-center
 docker compose up -d --no-deps --force-recreate server-control-center
-\`\`\`
+```
 
 When this option is enabled, the AI assistant sends the user's question and selected telemetry/log context to Google Gemini. Review your data-handling requirements before configuring an API key.
 
@@ -80,7 +80,7 @@ When this option is enabled, the AI assistant sends the user's question and sele
 
 ## Useful commands
 
-\`\`\`bash
+```bash
 # Application status
 docker compose -f /opt/server-control-center/docker-compose.yml ps
 
@@ -95,15 +95,15 @@ curl -fsS http://127.0.0.1:3000/api/health
 
 # Security overview
 curl -fsS http://127.0.0.1:3000/api/security
-\`\`\`
+```
 
 ## Uninstall
 
 Run:
 
-\`\`\`bash
+```bash
 sudo bash /opt/server-control-center/deploy/uninstall.sh
-\`\`\`
+```
 
 The script asks for explicit confirmation and backs up the SCC application, agent, service unit and SCC Nginx status file. It stops/removes only the SCC container and host agent; it does not restart Docker or stop unrelated containers. Docker images are left on disk.
 
@@ -111,13 +111,13 @@ The script asks for explicit confirmation and backs up the SCC application, agen
 
 Requirements: Node.js 22 and npm.
 
-\`\`\`bash
+```bash
 npm ci
 cp .env.example .env
 npm run lint
 npm run build
 npm run dev
-\`\`\`
+```
 
 The default provider for local development is the mock provider. A production installation uses `METRICS_PROVIDER=agent`.
 
