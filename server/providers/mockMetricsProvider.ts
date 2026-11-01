@@ -255,28 +255,28 @@ export class MockNginxMetricsProvider implements NginxMetricsProvider {
         {
           serverName: 'app.example.test',
           listenPort: 443,
-          upstream: 'http://127.0.0.1:5678',
+          upstream: 'http://127.0.0.1:8081',
           requests: 842100,
           status: 'healthy'
         },
         {
           serverName: 'api.example.test',
           listenPort: 443,
-          upstream: 'http://127.0.0.1:2053',
+          upstream: 'http://127.0.0.1:8080',
           requests: 382400,
           status: 'healthy'
         },
         {
           serverName: 'admin.example.test',
           listenPort: 443,
-          upstream: 'http://127.0.0.1:8123',
+          upstream: 'http://127.0.0.1:5432',
           requests: 219800,
           status: 'healthy'
         },
         {
           serverName: 'status.example.test',
           listenPort: 443,
-          upstream: 'http://127.0.0.1:61208',
+          upstream: 'http://127.0.0.1:6379',
           requests: 44910,
           status: 'healthy'
         }
