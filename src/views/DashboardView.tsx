@@ -71,6 +71,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const diskUsedGb = (system.disk.usedBytes / (1024 * 1024 * 1024)).toFixed(1);
   const diskTotalGb = (system.disk.totalBytes / (1024 * 1024 * 1024)).toFixed(1);
   const diskFreeGb = (system.disk.freeBytes / (1024 * 1024 * 1024)).toFixed(1);
+  const networkInterfaceLabel = system.network.interfaceName
+    ? `${system.network.interfaceName} · default route`
+    : 'Default route interface unavailable';
+  const nginxSuccessRate =
+    nginx && nginx.totalRequests > 0
+      ? `${((nginx.statusCodeCounts.code2xx / nginx.totalRequests) * 100).toFixed(1)}%`
+      : '—';
 
   return (
     <div className="space-y-6">
@@ -136,7 +143,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500">
-            <span>Free: {ramFreeGb} GB</span>
+            <span>Available: {ramFreeGb} GB</span>
             <MiniSparkline data={history.slice(-15).map((h) => h.ram)} color="#3b82f6" />
           </div>
         </div>
@@ -212,7 +219,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
           <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500">
-            <span>eth0 WAN</span>
+            <span>{networkInterfaceLabel}</span>
             <MiniSparkline data={history.slice(-15).map((h) => h.networkRxKbps)} color="#06b6d4" />
           </div>
           <div className="mt-1 text-[10px] font-mono text-cyan-400/80">
@@ -234,7 +241,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
           <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500">
-            <span>eth0 WAN</span>
+            <span>{networkInterfaceLabel}</span>
             <MiniSparkline data={history.slice(-15).map((h) => h.networkTxKbps)} color="#818cf8" />
           </div>
           <div className="mt-1 text-[10px] font-mono text-indigo-400/80">
@@ -248,7 +255,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* 1. CPU Usage Last Hour */}
         <AreaChart
           title="CPU Usage (Past 1 Hour)"
-          subtitle="Percentage load across 4 virtual CPU cores"
+          subtitle={`Percentage load across ${system.info.cpuCores} virtual CPU cores`}
           data={cpuData}
           series1Name="CPU"
           series1Color="#10b981"
@@ -259,7 +266,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* 2. RAM Usage Last Hour */}
         <AreaChart
           title="Memory Usage (Past 1 Hour)"
-          subtitle="RAM consumption in percent of 8.0 GB total"
+          subtitle={`RAM consumption in percent of ${ramTotalGb} GB total`}
           data={ramData}
           series1Name="RAM"
           series1Color="#3b82f6"
@@ -282,7 +289,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* 4. Load Average Last Hour */}
         <AreaChart
           title="System Load Average (1m)"
-          subtitle="Kernel run-queue load relative to 4.00 capacity"
+          subtitle={`Kernel run-queue load relative to ${system.info.cpuCores}.00 capacity`}
           data={loadData}
           series1Name="Load 1m"
           series1Color="#f59e0b"
@@ -299,7 +306,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Box className="h-4.5 w-4.5 text-emerald-400" />
               <h3 className="font-semibold text-zinc-100">Docker Containers</h3>
               <span className="rounded-md bg-zinc-800 px-2 py-0.5 font-mono text-xs text-zinc-300">
-                {docker ? `${docker.running}/${docker.total} Running` : '4 Running'}
+                {docker ? `${docker.running}/${docker.total} Running` : '—'}
               </span>
             </div>
             <button
@@ -340,7 +347,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Globe className="h-4.5 w-4.5 text-cyan-400" />
               <h3 className="font-semibold text-zinc-100">Nginx Web Server</h3>
               <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 font-mono text-xs text-emerald-400">
-                {nginx?.status.toUpperCase() || 'ACTIVE'}
+                {nginx?.status.toUpperCase() || 'UNKNOWN'}
               </span>
             </div>
             <button
@@ -355,25 +362,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/60 p-3">
               <div className="text-[11px] text-zinc-500">Active Conns</div>
               <div className="font-mono text-lg font-bold text-white">
-                {nginx?.activeConnections ?? 42}
+                {nginx?.activeConnections ?? '—'}
               </div>
             </div>
             <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/60 p-3">
               <div className="text-[11px] text-zinc-500">Req/sec</div>
               <div className="font-mono text-lg font-bold text-white">
-                {nginx?.requestsPerSec ?? 18.4}
+                {nginx ? nginx.requestsPerSec : '—'}
               </div>
             </div>
             <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/60 p-3">
               <div className="text-[11px] text-zinc-500">2xx Success</div>
               <div className="font-mono text-lg font-bold text-emerald-400">
-                {nginx ? `${((nginx.statusCodeCounts.code2xx / nginx.totalRequests) * 100).toFixed(1)}%` : '95.4%'}
+                {nginxSuccessRate}
               </div>
             </div>
             <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/60 p-3">
               <div className="text-[11px] text-zinc-500">Total Traffic</div>
               <div className="font-mono text-lg font-bold text-zinc-200">
-                {nginx ? `${(nginx.totalTrafficBytes / (1024 * 1024 * 1024)).toFixed(1)} GB` : '29.4 GB'}
+                {nginx ? `${(nginx.totalTrafficBytes / (1024 * 1024 * 1024)).toFixed(1)} GB` : '—'}
               </div>
             </div>
           </div>
