@@ -171,6 +171,9 @@ jobs:
       - name: Check Python agent syntax
         run: python3 -m py_compile deploy/host-agent/*.py
 
+      - name: Test host-agent network metrics
+        run: python3 -m unittest discover -s deploy/host-agent -p 'test_*.py'
+
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
