@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 SRC="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${SCC_VERSION:-1.1.1}"
+VERSION="${SCC_VERSION:-1.1.2}"
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
   echo "Invalid SCC_VERSION: $VERSION"
   exit 1
