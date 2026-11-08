@@ -240,7 +240,7 @@ jobs:
           sudo systemctl is-active --quiet scc-agent.service
           agent_socket_ready=0
           for _ in $(seq 1 40); do
-            if [[ -S /run/scc-agent/agent.sock ]]; then
+            if sudo test -S /run/scc-agent/agent.sock; then
               agent_socket_ready=1
               break
             fi
