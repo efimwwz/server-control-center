@@ -62,7 +62,8 @@ jobs:
             sleep 1
           done
           test "$ready" -eq 1
-          node -e 'const h=require("/tmp/scc-health.json"); if(h.status!=="ok" || h.version!=="1.1.1" || h.mode!=="mock") process.exit(1)'
+          expected_version="$(node -p "require('./package.json').version")"
+          node -e 'const h=require("/tmp/scc-health.json"); if(h.status!=="ok" || h.version!==process.argv[1] || h.mode!=="mock") process.exit(1)' "$expected_version"
 
           # Verify the SPA fallback handles both the root and client-side routes.
           for route in / /dashboard /docker /network /security /settings; do
@@ -310,7 +311,8 @@ jobs:
           DOCKER_STARTED_AT: ${{ steps.prepare.outputs.docker_started_at }}
         run: |
           set -euo pipefail
-          local_image="ghcr.io/efimwwz/server-control-center:1.1.1"
+          scc_version="$(node -p "require('./package.json').version")"
+          local_image="ghcr.io/efimwwz/server-control-center:$scc_version"
           docker build --tag "$local_image" .
 
           # The deployment installer normally pulls its release image. For
@@ -328,7 +330,7 @@ jobs:
           chmod 0755 "$wrapper_dir/docker"
 
           sudo env PATH="$wrapper_dir:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
-            SCC_VERSION=1.1.1 bash deploy/install.sh
+            SCC_VERSION="$scc_version" bash deploy/install.sh
 
           ready=0
           for _ in $(seq 1 30); do
@@ -339,11 +341,11 @@ jobs:
             sleep 1
           done
           test "$ready" -eq 1
-          python3 - <<'PY'
-          import json
+          SCC_VERSION="$scc_version" python3 - <<'PY'
+          import json, os
           data = json.load(open("/tmp/scc-pr-health.json", encoding="utf-8"))
           assert data.get("status") == "ok", data
-          assert data.get("version") == "1.1.1", data
+          assert data.get("version") == os.environ["SCC_VERSION"], data
           assert data.get("mode") == "agent", data
           PY
 
