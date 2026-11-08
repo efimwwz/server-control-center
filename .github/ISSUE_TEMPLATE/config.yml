@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/efimwwz/server-control-center/blob/main/SECURITY.md
+    about: Please do not report exploitable vulnerabilities in public issues. Follow the private reporting instructions.
+  - name: Installation guide
+    url: https://github.com/efimwwz/server-control-center/blob/main/INSTALL.md
+    about: Read the supported OS, installation, remote access and troubleshooting instructions first.
