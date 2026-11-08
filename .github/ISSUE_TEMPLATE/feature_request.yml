@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a focused improvement to SCC.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What task or pain point does this feature address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behaviour you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Security and compatibility
+      options:
+        - label: I have considered the impact on the read-only monitoring model and host-agent privileges.
+          required: false

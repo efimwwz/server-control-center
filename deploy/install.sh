@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 SRC="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${SCC_VERSION:-1.1.1}"
+VERSION="${SCC_VERSION:-1.1.2}"
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
   echo "Invalid SCC_VERSION: $VERSION"
   exit 1
@@ -161,6 +161,25 @@ SOCKET_DIR_CREATED=1
 AGENT_STARTED=1
 systemctl enable --now scc-agent.service
 systemctl is-active --quiet scc-agent.service
+
+# Type=simple reports active as soon as Python starts. Wait until the agent
+# has completed imports and actually bound its Unix HTTP socket before
+# pulling / starting the dashboard container.
+agent_socket_ready=0
+for _ in $(seq 1 40); do
+  if [[ -S "$SOCKET_DIR/agent.sock" ]]; then
+    agent_socket_ready=1
+    break
+  fi
+  sleep 0.25
+done
+
+if [[ "$agent_socket_ready" -ne 1 ]]; then
+  systemctl status scc-agent.service --no-pager || true
+  journalctl -u scc-agent.service -n 80 --no-pager || true
+  echo "Host-agent did not create $SOCKET_DIR/agent.sock."
+  exit 1
+fi
 
 docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" config --quiet
 docker compose --project-directory "$APP" -f "$APP/docker-compose.yml" pull

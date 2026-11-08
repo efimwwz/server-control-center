@@ -46,7 +46,8 @@ async function startServer() {
     // Production mode: Serve built static files
     const distPath = path.resolve(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
+    // Express 5 requires a named wildcard; include the root path as well.
+    app.get('/{*splat}', (_req, res) => {
       res.sendFile(path.resolve(distPath, 'index.html'));
     });
   }

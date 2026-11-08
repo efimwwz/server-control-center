@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -60,7 +62,14 @@ jobs:
             sleep 1
           done
           test "$ready" -eq 1
-          node -e 'const h=require("/tmp/scc-health.json"); if(h.status!=="ok" || h.version!=="1.1.1" || h.mode!=="mock") process.exit(1)'
+          expected_version="$(node -p "require('./package.json').version")"
+          node -e 'const h=require("/tmp/scc-health.json"); if(h.status!=="ok" || h.version!==process.argv[1] || h.mode!=="mock") process.exit(1)' "$expected_version"
+
+          # Verify the SPA fallback handles both the root and client-side routes.
+          for route in / /dashboard /docker /network /security /settings; do
+            curl -fsS "http://127.0.0.1:3000$route" -o /tmp/scc-page.html
+            grep -q '<div id="root"></div>' /tmp/scc-page.html
+          done
 
           curl -fsS http://127.0.0.1:3000/api/system >/dev/null
           curl -fsS http://127.0.0.1:3000/api/docker >/dev/null
@@ -164,3 +173,210 @@ jobs:
 
       - name: Validate Compose configuration
         run: docker compose config --quiet
+
+  install-validation:
+    name: Clean install and uninstall (${{ matrix.arch }})
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+            uname: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            uname: aarch64
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Verify fresh Ubuntu 24.04 host and prepare an unrelated container
+        id: prepare
+        run: |
+          set -euo pipefail
+          test "$( . /etc/os-release; printf '%s' "$VERSION_ID" )" = "24.04"
+          test "$(uname -m)" = "${{ matrix.uname }}"
+          test "$(dpkg --print-architecture)" = "${{ matrix.arch }}"
+
+          # GitHub-hosted runners are disposable VMs. Start their preinstalled
+          # Docker service and create a sentinel to prove SCC leaves unrelated
+          # workloads untouched.
+          sudo systemctl start docker
+          docker info >/dev/null
+          docker run -d --name scc-launch-sentinel --restart unless-stopped \
+            busybox:1.36 sh -c 'while true; do sleep 10; done'
+
+          docker_started_at="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
+          echo "docker_started_at=$docker_started_at" >> "$GITHUB_OUTPUT"
+
+      - name: Install the latest published SCC release
+        id: install
+        run: |
+          set -euxo pipefail
+          sudo bash ./install.sh
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health -o /tmp/scc-health.json; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+
+          version="$(python3 -c 'import json; print(json.load(open("/tmp/scc-health.json"))["version"])')"
+          python3 - "$version" <<'PY'
+          import json, sys
+          data = json.load(open("/tmp/scc-health.json", encoding="utf-8"))
+          assert data.get("status") == "ok", data
+          assert data.get("mode") == "agent", data
+          assert data.get("version") == sys.argv[1], data
+          PY
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          sudo systemctl is-active --quiet scc-agent.service
+          agent_socket_ready=0
+          for _ in $(seq 1 40); do
+            if sudo test -S /run/scc-agent/agent.sock; then
+              agent_socket_ready=1
+              break
+            fi
+            sleep 0.25
+          done
+          if [[ "$agent_socket_ready" -ne 1 ]]; then
+            sudo systemctl status scc-agent.service --no-pager || true
+            sudo journalctl -u scc-agent.service -n 80 --no-pager || true
+            exit 1
+          fi
+          test "$(docker inspect -f '{{.State.Health.Status}}' server-control-center)" = "healthy"
+
+          curl -fsS http://127.0.0.1:3000/api/system -o /tmp/scc-system.json
+          curl -fsS http://127.0.0.1:3000/api/docker -o /tmp/scc-docker.json
+          python3 - <<'PY'
+          import json
+          system = json.load(open("/tmp/scc-system.json", encoding="utf-8"))
+          docker = json.load(open("/tmp/scc-docker.json", encoding="utf-8"))
+          assert system.get("info", {}).get("hostname"), system
+          assert "containers" in docker, docker
+          PY
+
+          docker inspect --format '{{json .HostConfig.PortBindings}}' server-control-center > /tmp/scc-port-bindings.json
+          python3 - <<'PY'
+          import json
+          bindings = json.load(open("/tmp/scc-port-bindings.json", encoding="utf-8"))
+          ports = bindings.get("3000/tcp") or []
+          assert any(item.get("HostIp") == "127.0.0.1" and item.get("HostPort") == "3000" for item in ports), bindings
+          PY
+
+          docker inspect scc-launch-sentinel >/dev/null
+          test "$(docker inspect -f '{{.State.Running}}' scc-launch-sentinel)" = "true"
+          after_install="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
+          echo "Docker service monotonic start time before SCC: $DOCKER_STARTED_AT"
+          echo "Docker service monotonic start time after SCC install: $after_install"
+          test "$after_install" = "$DOCKER_STARTED_AT"
+        env:
+          DOCKER_STARTED_AT: ${{ steps.prepare.outputs.docker_started_at }}
+
+      - name: Uninstall SCC and verify cleanup
+        env:
+          SCC_VERSION: ${{ steps.install.outputs.version }}
+          DOCKER_STARTED_AT: ${{ steps.prepare.outputs.docker_started_at }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' 'REMOVE SERVER CONTROL CENTER' | sudo bash /opt/server-control-center/deploy/uninstall.sh
+
+          test ! -e /opt/server-control-center
+          test ! -e /opt/scc-agent
+          test ! -e /etc/systemd/system/scc-agent.service
+          test ! -e /run/scc-agent
+          ! sudo systemctl is-active --quiet scc-agent.service
+          ! docker ps -a --format '{{.Names}}' | grep -Fxq server-control-center
+          ! curl -fsS --max-time 2 http://127.0.0.1:3000/api/health >/dev/null 2>&1
+
+          # The uninstall script leaves Docker itself, its images and unrelated
+          # containers untouched.
+          sudo systemctl is-active --quiet docker.service
+          docker image inspect "ghcr.io/efimwwz/server-control-center:$SCC_VERSION" >/dev/null
+          test "$(docker inspect -f '{{.State.Running}}' scc-launch-sentinel)" = "true"
+          after_uninstall="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
+          test "$after_uninstall" = "$DOCKER_STARTED_AT"
+          test -n "$(sudo find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
+
+      - name: Install and uninstall the current PR deployment code
+        env:
+          DOCKER_STARTED_AT: ${{ steps.prepare.outputs.docker_started_at }}
+        run: |
+          set -euo pipefail
+          scc_version="$(node -p "require('./package.json').version")"
+          local_image="ghcr.io/efimwwz/server-control-center:$scc_version"
+          docker build --tag "$local_image" .
+
+          # The deployment installer normally pulls its release image. For
+          # this branch-only test, use the image just built from the PR source.
+          wrapper_dir="$(mktemp -d)"
+          trap 'rm -rf "$wrapper_dir"' EXIT
+          cat > "$wrapper_dir/docker" <<'SH'
+          #!/usr/bin/env bash
+          if [[ "${1:-}" == "compose" && "${@: -1}" == "pull" ]]; then
+            echo "CI: using the PR-built SCC image; skipping the remote image pull."
+            exit 0
+          fi
+          exec /usr/bin/docker "$@"
+          SH
+          chmod 0755 "$wrapper_dir/docker"
+
+          sudo env PATH="$wrapper_dir:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+            SCC_VERSION="$scc_version" bash deploy/install.sh
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health -o /tmp/scc-pr-health.json; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          SCC_VERSION="$scc_version" python3 - <<'PY'
+          import json, os
+          data = json.load(open("/tmp/scc-pr-health.json", encoding="utf-8"))
+          assert data.get("status") == "ok", data
+          assert data.get("version") == os.environ["SCC_VERSION"], data
+          assert data.get("mode") == "agent", data
+          PY
+
+          sudo systemctl is-active --quiet scc-agent.service
+          sudo test -S /run/scc-agent/agent.sock
+          test "$(docker inspect -f '{{.State.Health.Status}}' server-control-center)" = "healthy"
+          curl -fsS http://127.0.0.1:3000/api/system -o /tmp/scc-pr-system.json
+          curl -fsS http://127.0.0.1:3000/api/docker -o /tmp/scc-pr-docker.json
+          python3 - <<'PY'
+          import json
+          system = json.load(open("/tmp/scc-pr-system.json", encoding="utf-8"))
+          docker = json.load(open("/tmp/scc-pr-docker.json", encoding="utf-8"))
+          assert system.get("info", {}).get("hostname"), system
+          assert "containers" in docker, docker
+          PY
+
+          printf '%s\n' 'REMOVE SERVER CONTROL CENTER' | sudo bash /opt/server-control-center/deploy/uninstall.sh
+          test ! -e /opt/server-control-center
+          test ! -e /opt/scc-agent
+          test ! -e /etc/systemd/system/scc-agent.service
+          test ! -e /run/scc-agent
+          ! sudo systemctl is-active --quiet scc-agent.service
+          ! docker ps -a --format '{{.Names}}' | grep -Fxq server-control-center
+          ! curl -fsS --max-time 2 http://127.0.0.1:3000/api/health >/dev/null 2>&1
+
+          sudo systemctl is-active --quiet docker.service
+          test "$(docker inspect -f '{{.State.Running}}' scc-launch-sentinel)" = "true"
+          after_pr_uninstall="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
+          test "$after_pr_uninstall" = "$DOCKER_STARTED_AT"
+          test -n "$(sudo find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
+
+      - name: Remove test sentinel
+        if: always()
+        run: docker rm -f scc-launch-sentinel >/dev/null 2>&1 || true

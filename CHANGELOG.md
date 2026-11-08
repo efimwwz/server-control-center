@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2
+
+- Upgrade the web server from Express 4 to Express 5 and update the matching TypeScript definitions.
+- Fix the Express 5-compatible SPA fallback route and add production smoke coverage for root and client-side routes.
+- Make the installer wait until the host-agent Unix socket is ready before starting the dashboard container.
+- Add clean Ubuntu 24.04 amd64 and arm64 CI coverage for published-release and PR-source install/uninstall flows.
+- Improve the public project presentation, English and Russian README, installation guidance and contributor documentation.
+- Add a genuine dashboard screenshot captured from the SCC frontend with synthetic mock telemetry; no private host metrics are included.
+
 ## 1.1.1
 
 - Added a public one-command Ubuntu 24.04 installer.
