@@ -565,7 +565,7 @@ def parse_percent(value):
 
 class Handler(BaseHTTPRequestHandler):
 
-    server_version = "SCC-Agent/1.1.2"
+    server_version = "SCC-Agent/1.1.3"
 
     def log_message(self, *_args):
         return
@@ -601,7 +601,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({
                     "status": "ok",
                     "agent": "scc-agent",
-                    "version": "1.1.2",
+                    "version": "1.1.3",
                     "readOnly": True,
                 })
 
