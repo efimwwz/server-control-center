@@ -11,6 +11,12 @@ Server Control Center (SCC) is a self-hosted monitoring dashboard for Ubuntu ser
 
 [English](README.md) · [Русский](README.ru.md) · [Installation guide](INSTALL.md)
 
+## Dashboard preview
+
+![Server Control Center dashboard preview](docs/screenshots/dashboard-preview.png)
+
+<sub>Captured from the actual SCC frontend using synthetic mock telemetry. No live host metrics or private server details are included.</sub>
+
 ## What you can monitor
 
 | Area | What SCC shows |
