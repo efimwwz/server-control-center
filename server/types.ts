@@ -54,6 +54,7 @@ export interface SystemMetrics {
     txBytesSec: number;
     rxFormatted: string;
     txFormatted: string;
+    interfaceName?: string;
   };
   history: MetricHistoryPoint[];
 }
@@ -158,6 +159,7 @@ export interface NetworkOverview {
   publicIp: string;
   hostname: string;
   defaultGateway: string;
+  defaultInterface?: string;
   dnsServers: string[];
   interfaces: NetworkInterface[];
   rxSpeedBytesSec: number;
