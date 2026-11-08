@@ -238,7 +238,19 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
           sudo systemctl is-active --quiet scc-agent.service
-          test -S /run/scc-agent/agent.sock
+          agent_socket_ready=0
+          for _ in $(seq 1 40); do
+            if [[ -S /run/scc-agent/agent.sock ]]; then
+              agent_socket_ready=1
+              break
+            fi
+            sleep 0.25
+          done
+          if [[ "$agent_socket_ready" -ne 1 ]]; then
+            sudo systemctl status scc-agent.service --no-pager || true
+            sudo journalctl -u scc-agent.service -n 80 --no-pager || true
+            exit 1
+          fi
           test "$(docker inspect -f '{{.State.Health.Status}}' server-control-center)" = "healthy"
 
           curl -fsS http://127.0.0.1:3000/api/system -o /tmp/scc-system.json
@@ -336,6 +348,10 @@ jobs:
       - name: Capture dashboard screenshot
         run: |
           set -euo pipefail
+          if [[ -s docs/screenshots/dashboard-preview.png ]]; then
+            echo "Keeping the existing captured dashboard preview."
+            exit 0
+          fi
           npx --yes playwright@latest install --with-deps chromium
           mkdir -p docs/screenshots
           npx --yes playwright@latest screenshot \
