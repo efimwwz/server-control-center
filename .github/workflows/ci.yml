@@ -360,7 +360,7 @@ jobs:
           assert "containers" in docker, docker
           PY
 
-          printf '%s\\n' 'REMOVE SERVER CONTROL CENTER' | sudo bash /opt/server-control-center/deploy/uninstall.sh
+          printf '%s\n' 'REMOVE SERVER CONTROL CENTER' | sudo bash /opt/server-control-center/deploy/uninstall.sh
           test ! -e /opt/server-control-center
           test ! -e /opt/scc-agent
           test ! -e /etc/systemd/system/scc-agent.service
