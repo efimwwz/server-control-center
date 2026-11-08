@@ -95,6 +95,7 @@ SCC does not start, stop or remove containers; change firewall, SSH or Nginx set
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 - [Public launch checklist](docs/PUBLIC_LAUNCH_CHECKLIST.md)
+- [Public announcement drafts](docs/ANNOUNCEMENT_DRAFTS.md)
 
 ## Contributing and feedback
 
