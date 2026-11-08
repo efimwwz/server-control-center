@@ -72,7 +72,7 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ network }) => {
               )}
             </button>
           </div>
-          <div className="mt-1 text-[11px] text-zinc-500">Frankfurt, Germany (VirtIO)</div>
+          <div className="mt-1 text-[11px] text-zinc-500">Detected from the host network</div>
         </div>
 
         {/* Default Gateway */}
@@ -84,7 +84,11 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ network }) => {
           <div className="mt-2 font-mono text-lg font-bold text-white tracking-wide">
             {network.defaultGateway}
           </div>
-          <div className="mt-1 text-[11px] text-zinc-500">Next-hop router</div>
+          <div className="mt-1 text-[11px] text-zinc-500">
+            {network.defaultInterface
+              ? `Default route via ${network.defaultInterface}`
+              : 'Default route interface unavailable'}
+          </div>
         </div>
 
         {/* Latency / Ping */}
@@ -113,7 +117,7 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ network }) => {
           <div className="mt-2 font-mono text-sm font-semibold text-zinc-200">
             {network.dnsServers.join(', ')}
           </div>
-          <div className="mt-1 text-[11px] text-zinc-500">Cloudflare & Google Anycast</div>
+          <div className="mt-1 text-[11px] text-zinc-500">Read from host resolver configuration</div>
         </div>
       </div>
 
