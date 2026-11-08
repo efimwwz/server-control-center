@@ -110,7 +110,7 @@ apiRouter.get(
     res.json({
       status: 'ok',
       app: 'Server Control Center',
-      version: '1.1.2',
+      version: '1.1.3',
       mode: providerMode,
       timestamp: new Date().toISOString(),
       geminiConfigured: !!(
