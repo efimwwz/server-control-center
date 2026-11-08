@@ -14,7 +14,7 @@ This document tracks launch work that requires repository changes, maintainer ac
   `Self-hosted Linux server monitoring dashboard for Ubuntu 24.04. Monitor CPU, memory, disks, Docker, Nginx, network, services and logs — private by default.`
 - [ ] Add repository topics:  
   `linux`, `ubuntu`, `docker`, `server-monitoring`, `self-hosted`, `sysadmin`, `nginx`, `systemd`, `monitoring`.
-- [ ] Capture genuine screenshots from the current running SCC UI and add them to the README. Do not use generated artwork or mockups as screenshots of the real product.
+- [x] Capture a genuine screenshot from the current SCC frontend in mock mode and embed it in both READMEs. The UI is real; telemetry is synthetic and contains no private host details.
 - [ ] Create a social preview image from the genuine product identity and apply it in repository settings.
 - [ ] Enable GitHub Discussions if the maintainer wants community Q&A.
 - [ ] Enable private vulnerability reporting / Security Advisories.
@@ -26,7 +26,7 @@ This document tracks launch work that requires repository changes, maintainer ac
 - [x] Add a CI smoke test for SPA root and nested routes.
 - [ ] Review the Express 5 upgrade and CI result before merging.
 - [ ] Review the remaining Dependabot pull requests individually; do not merge the Express update until the launch branch fix passes CI.
-- [ ] Perform clean installation tests on Ubuntu Server 24.04 `amd64` and `arm64`.
+- [ ] Complete CI clean-install and uninstall tests on Ubuntu 24.04 `amd64` and `arm64` runners. The matrix is now configured; keep this item open until both jobs pass.
 - [ ] Verify uninstall and reinstall behaviour on disposable test hosts.
 - [ ] Confirm GHCR contains the expected multi-platform image for the release tag.
 - [ ] Publish a new stable release only after the checks above pass.
