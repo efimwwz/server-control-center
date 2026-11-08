@@ -214,7 +214,7 @@ jobs:
       - name: Install the latest published SCC release
         id: install
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           sudo bash ./install.sh
 
           ready=0
@@ -262,6 +262,8 @@ jobs:
           docker inspect scc-launch-sentinel >/dev/null
           test "$(docker inspect -f '{{.State.Running}}' scc-launch-sentinel)" = "true"
           after_install="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
+          echo "Docker service monotonic start time before SCC: $DOCKER_STARTED_AT"
+          echo "Docker service monotonic start time after SCC install: $after_install"
           test "$after_install" = "$DOCKER_STARTED_AT"
         env:
           DOCKER_STARTED_AT: ${{ steps.prepare.outputs.docker_started_at }}
