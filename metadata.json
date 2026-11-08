@@ -1,6 +1,6 @@
 {
   "name": "Server Control Center",
-  "description": "Unified modern web dashboard for monitoring Ubuntu 24.04 LTS VPS, Docker containers, Nginx, network, and system services with AI Assistant.",
+  "description": "Self-hosted Ubuntu 24.04 LTS server monitoring dashboard for system resources, Docker, Nginx, network, systemd services, logs and read-only security checks.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
