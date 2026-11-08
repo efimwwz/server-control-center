@@ -174,6 +174,24 @@ jobs:
       - name: Test host-agent network metrics
         run: python3 -m unittest discover -s deploy/host-agent -p 'test_*.py'
 
+      - name: Validate application version consistency
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          python3 - "$VERSION" <<'PY'
+          import json, sys
+          version = sys.argv[1]
+          with open("package-lock.json", encoding="utf-8") as stream:
+              lock = json.load(stream)
+          with open("deploy/host-agent/agent.py", encoding="utf-8") as stream:
+              agent = stream.read()
+          with open("server/apiRoutes.ts", encoding="utf-8") as stream:
+              api = stream.read()
+          assert lock.get("version") == version, lock.get("version")
+          assert lock.get("packages", {}).get("", {}).get("version") == version
+          assert f'"version": "{version}"' in agent
+          assert f"version: '{version}'" in api
+          PY
+
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
