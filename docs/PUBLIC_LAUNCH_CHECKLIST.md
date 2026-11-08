@@ -33,6 +33,7 @@ This document tracks launch work that requires repository changes, maintainer ac
 
 ## First public outreach
 
+- [x] Prepare technical Show HN, Reddit and Russian community announcement drafts.
 - [ ] Publish a technical Show HN post with genuine dashboard screenshots and the exact supported OS.
 - [ ] Share a transparent project introduction in relevant self-hosting / Linux communities, following each community's promotion rules.
 - [ ] Recruit a small group of real administrators to test installation and report issues.
