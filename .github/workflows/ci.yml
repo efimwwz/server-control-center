@@ -305,76 +305,76 @@ jobs:
           test "$after_uninstall" = "$DOCKER_STARTED_AT"
           test -n "$(find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
 
-      - name: Remove test sentinel
-        if: always()
-        run: docker rm -f scc-launch-sentinel >/dev/null 2>&1 || true
-
-  capture-dashboard-preview:
-    name: Capture real SCC UI preview (mock telemetry)
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'launch/preparation'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - name: Check out launch branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Start SCC with synthetic telemetry
+      - name: Install and uninstall the current PR deployment code
+        env:
+          DOCKER_STARTED_AT: ${{ steps.prepare.outputs.docker_started_at }}
         run: |
           set -euo pipefail
-          METRICS_PROVIDER=mock NODE_ENV=development PORT=4173 \
-            npm run dev -- --host 127.0.0.1 > /tmp/scc-preview.log 2>&1 &
-          for _ in $(seq 1 40); do
-            if curl -fsS http://127.0.0.1:4173/api/health >/dev/null; then
-              exit 0
+          local_image="ghcr.io/efimwwz/server-control-center:1.1.1"
+          docker build --tag "$local_image" .
+
+          # The deployment installer normally pulls its release image. For
+          # this branch-only test, use the image just built from the PR source.
+          wrapper_dir="$(mktemp -d)"
+          trap 'rm -rf "$wrapper_dir"' EXIT
+          cat > "$wrapper_dir/docker" <<'SH'
+          #!/usr/bin/env bash
+          if [[ "${1:-}" == "compose" && "${@: -1}" == "pull" ]]; then
+            echo "CI: using the PR-built SCC image; skipping the remote image pull."
+            exit 0
+          fi
+          exec /usr/bin/docker "$@"
+          SH
+          chmod 0755 "$wrapper_dir/docker"
+
+          sudo env PATH="$wrapper_dir:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+            SCC_VERSION=1.1.1 bash deploy/install.sh
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health -o /tmp/scc-pr-health.json; then
+              ready=1
+              break
             fi
             sleep 1
           done
-          cat /tmp/scc-preview.log
-          exit 1
+          test "$ready" -eq 1
+          python3 - <<'PY'
+          import json
+          data = json.load(open("/tmp/scc-pr-health.json", encoding="utf-8"))
+          assert data.get("status") == "ok", data
+          assert data.get("version") == "1.1.1", data
+          assert data.get("mode") == "agent", data
+          PY
 
-      - name: Capture dashboard screenshot
-        run: |
-          set -euo pipefail
-          if [[ -s docs/screenshots/dashboard-preview.png ]]; then
-            echo "Keeping the existing captured dashboard preview."
-            exit 0
-          fi
-          npx --yes playwright@latest install --with-deps chromium
-          mkdir -p docs/screenshots
-          npx --yes playwright@latest screenshot \
-            --browser chromium \
-            --viewport-size "1600,900" \
-            --wait-for-timeout 7000 \
-            http://127.0.0.1:4173 \
-            docs/screenshots/dashboard-preview.png
-          test -s docs/screenshots/dashboard-preview.png
+          sudo systemctl is-active --quiet scc-agent.service
+          sudo test -S /run/scc-agent/agent.sock
+          test "$(docker inspect -f '{{.State.Health.Status}}' server-control-center)" = "healthy"
+          curl -fsS http://127.0.0.1:3000/api/system -o /tmp/scc-pr-system.json
+          curl -fsS http://127.0.0.1:3000/api/docker -o /tmp/scc-pr-docker.json
+          python3 - <<'PY'
+          import json
+          system = json.load(open("/tmp/scc-pr-system.json", encoding="utf-8"))
+          docker = json.load(open("/tmp/scc-pr-docker.json", encoding="utf-8"))
+          assert system.get("info", {}).get("hostname"), system
+          assert "containers" in docker, docker
+          PY
 
-      - name: Commit generated preview to the launch branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/screenshots/dashboard-preview.png
-          if git diff --cached --quiet; then
-            echo "Dashboard preview is already up to date."
-            exit 0
-          fi
-          git commit -m "docs: add captured dashboard preview"
-          auth="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
-          git -c "http.extraheader=AUTHORIZATION: basic $auth" push origin "HEAD:$GITHUB_HEAD_REF"
+          printf '%s\\n' 'REMOVE SERVER CONTROL CENTER' | sudo bash /opt/server-control-center/deploy/uninstall.sh
+          test ! -e /opt/server-control-center
+          test ! -e /opt/scc-agent
+          test ! -e /etc/systemd/system/scc-agent.service
+          test ! -e /run/scc-agent
+          ! sudo systemctl is-active --quiet scc-agent.service
+          ! docker ps -a --format '{{.Names}}' | grep -Fxq server-control-center
+          ! curl -fsS --max-time 2 http://127.0.0.1:3000/api/health >/dev/null 2>&1
+
+          sudo systemctl is-active --quiet docker.service
+          test "$(docker inspect -f '{{.State.Running}}' scc-launch-sentinel)" = "true"
+          after_pr_uninstall="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
+          test "$after_pr_uninstall" = "$DOCKER_STARTED_AT"
+          test -n "$(find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
+
+      - name: Remove test sentinel
+        if: always()
+        run: docker rm -f scc-launch-sentinel >/dev/null 2>&1 || true
