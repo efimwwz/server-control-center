@@ -37,11 +37,19 @@ export const NginxView: React.FC<NginxViewProps> = ({ nginx }) => {
     value2: pt.latencyMs
   }));
 
-  const totalReqs = nginx.totalRequests || 1;
-  const p2xx = ((nginx.statusCodeCounts.code2xx / totalReqs) * 100).toFixed(1);
-  const p3xx = ((nginx.statusCodeCounts.code3xx / totalReqs) * 100).toFixed(1);
-  const p4xx = ((nginx.statusCodeCounts.code4xx / totalReqs) * 100).toFixed(1);
-  const p5xx = ((nginx.statusCodeCounts.code5xx / totalReqs) * 100).toFixed(2);
+  const hasRequests = nginx.totalRequests > 0;
+  const p2xx = hasRequests
+    ? ((nginx.statusCodeCounts.code2xx / nginx.totalRequests) * 100).toFixed(1)
+    : '—';
+  const p3xx = hasRequests
+    ? ((nginx.statusCodeCounts.code3xx / nginx.totalRequests) * 100).toFixed(1)
+    : '—';
+  const p4xx = hasRequests
+    ? ((nginx.statusCodeCounts.code4xx / nginx.totalRequests) * 100).toFixed(1)
+    : '—';
+  const p5xx = hasRequests
+    ? ((nginx.statusCodeCounts.code5xx / nginx.totalRequests) * 100).toFixed(2)
+    : '—';
 
   const trafficGb = (nginx.totalTrafficBytes / (1024 * 1024 * 1024)).toFixed(2);
 

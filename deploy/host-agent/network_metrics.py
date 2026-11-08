@@ -302,12 +302,17 @@ def _collect():
     link_map = {item["ifname"]: item for item in links}
     address_map = {item["ifname"]: item for item in addresses}
 
-    default_route = next(
-        (
-            route for route in routes
-            if route.get("dst") == "default"
+    default_routes = [
+        route for route in routes
+        if route.get("dst") == "default" and route.get("dev")
+    ]
+    default_route = min(
+        default_routes,
+        key=lambda route: (
+            int(route.get("metric") or 0),
+            str(route.get("dev") or ""),
         ),
-        {},
+        default={},
     )
 
     default_gateway = default_route.get("gateway", "Unavailable")
@@ -421,6 +426,7 @@ def _collect():
         "publicIp": _get_public_ip(),
         "hostname": socket.gethostname(),
         "defaultGateway": default_gateway,
+        "defaultInterface": default_iface or "Unavailable",
         "dnsServers": _dns_servers(),
         "interfaces": interfaces,
         "rxSpeedBytesSec": rx_speed,

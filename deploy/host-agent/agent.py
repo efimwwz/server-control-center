@@ -105,43 +105,100 @@ def cpu_usage():
     }
 
 
-def network_bytes():
-    total_rx = 0
-    total_tx = 0
+def _select_default_interface(routes):
+    """Select the lowest-metric interface from default routes."""
+    candidates = []
 
-    with open("/proc/net/dev", "r", encoding="utf-8") as f:
-        for line in f:
-            if ":" not in line:
-                continue
+    for route in routes:
+        if route.get("dst") not in (None, "", "default"):
+            continue
 
-            iface, data = line.split(":", 1)
-            iface = iface.strip()
+        interface = route.get("dev")
+        if not interface:
+            continue
 
-            if iface == "lo":
-                continue
+        try:
+            metric = int(route.get("metric") or 0)
+        except (TypeError, ValueError):
+            metric = 0
 
-            fields = data.split()
-            if len(fields) < 9:
-                continue
+        candidates.append((metric, str(interface)))
 
-            total_rx += int(fields[0])
-            total_tx += int(fields[8])
+    return min(candidates)[1] if candidates else ""
 
-    return total_rx, total_tx
+
+def default_network_interface():
+    """Return the interface used by the host's preferred default route."""
+    for args in (
+        ["ip", "-j", "route", "show", "default"],
+        ["ip", "-6", "-j", "route", "show", "default"],
+    ):
+        try:
+            routes = json.loads(run_cmd(args))
+        except (OSError, RuntimeError, subprocess.SubprocessError, ValueError):
+            continue
+
+        interface = _select_default_interface(routes)
+        if interface:
+            return interface
+
+    # Fallback for systems where the ip JSON command is unavailable.
+    candidates = []
+    try:
+        with open("/proc/net/route", "r", encoding="utf-8") as stream:
+            next(stream, None)
+            for line in stream:
+                fields = line.split()
+                if len(fields) < 8 or fields[1] != "00000000":
+                    continue
+
+                try:
+                    flags = int(fields[3], 16)
+                    metric = int(fields[6])
+                except ValueError:
+                    continue
+
+                if flags & 1:
+                    candidates.append((metric, fields[0]))
+    except OSError:
+        pass
+
+    return min(candidates)[1] if candidates else ""
+
+
+def network_bytes(interface, sys_class_net=Path("/sys/class/net")):
+    """Read byte counters for one interface, never aggregate bridges/veths."""
+    if not interface:
+        return 0, 0
+
+    stats_dir = sys_class_net / interface / "statistics"
+
+    try:
+        rx_bytes = int((stats_dir / "rx_bytes").read_text().strip())
+        tx_bytes = int((stats_dir / "tx_bytes").read_text().strip())
+    except (OSError, ValueError):
+        return 0, 0
+
+    return rx_bytes, tx_bytes
 
 
 def network_speed():
-    rx_a, tx_a = network_bytes()
+    interface = default_network_interface()
+    if not interface:
+        return 0, 0, ""
+
+    rx_a, tx_a = network_bytes(interface)
     started = time.monotonic()
 
     time.sleep(0.15)
 
-    rx_b, tx_b = network_bytes()
+    rx_b, tx_b = network_bytes(interface)
     elapsed = max(0.05, time.monotonic() - started)
 
     return (
         max(0, int((rx_b - rx_a) / elapsed)),
         max(0, int((tx_b - tx_a) / elapsed)),
+        interface,
     )
 
 
@@ -239,7 +296,7 @@ def system_metrics():
 
     disk = shutil.disk_usage("/")
 
-    rx_speed, tx_speed = network_speed()
+    rx_speed, tx_speed, network_interface = network_speed()
 
     hostname = socket.gethostname()
 
@@ -330,6 +387,7 @@ def system_metrics():
             "txBytesSec": tx_speed,
             "rxFormatted": f"{format_bytes(rx_speed)}/s",
             "txFormatted": f"{format_bytes(tx_speed)}/s",
+            "interfaceName": network_interface,
         },
         "history": [],
     }
