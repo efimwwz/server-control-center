@@ -303,7 +303,7 @@ jobs:
           test "$(docker inspect -f '{{.State.Running}}' scc-launch-sentinel)" = "true"
           after_uninstall="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
           test "$after_uninstall" = "$DOCKER_STARTED_AT"
-          test -n "$(find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
+          test -n "$(sudo find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
 
       - name: Install and uninstall the current PR deployment code
         env:
@@ -373,7 +373,7 @@ jobs:
           test "$(docker inspect -f '{{.State.Running}}' scc-launch-sentinel)" = "true"
           after_pr_uninstall="$(sudo systemctl show docker.service -p ActiveEnterTimestampMonotonic --value)"
           test "$after_pr_uninstall" = "$DOCKER_STARTED_AT"
-          test -n "$(find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
+          test -n "$(sudo find /var/backups/server-control-center -maxdepth 1 -name 'uninstall-*.tar.gz' -print -quit)"
 
       - name: Remove test sentinel
         if: always()
