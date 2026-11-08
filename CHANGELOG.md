@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.3
+
+- Make dashboard CPU, RAM and load-chart captions reflect the host's reported CPU and memory capacity.
+- Detect the active default-route interface and measure aggregate network throughput only on that interface, avoiding duplicate Docker bridge/veth accounting.
+- Show the detected default-route interface instead of the hardcoded `eth0 WAN` label.
+- Replace misleading placeholder network location and DNS-provider claims with host-derived descriptions.
+- Display an em dash for Nginx percentages when no requests have been recorded, and remove mock-looking fallback metrics from the live dashboard.
+- Add host-agent unit tests for default-route selection and interface-specific traffic counters.
+
 ## 1.1.2
 
 - Upgrade the web server from Express 4 to Express 5 and update the matching TypeScript definitions.
