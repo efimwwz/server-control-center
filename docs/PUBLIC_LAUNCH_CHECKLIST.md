@@ -24,11 +24,12 @@ This document tracks launch work that requires repository changes, maintainer ac
 
 - [x] Identify and fix the Express 5 wildcard fallback route incompatibility in the launch branch.
 - [x] Add a CI smoke test for SPA root and nested routes.
-- [ ] Review the Express 5 upgrade and CI result before merging.
+- [x] Review the Express 5 upgrade and CI result before merging.
 - [ ] Review the remaining Dependabot pull requests individually; do not merge the Express update until the launch branch fix passes CI.
 - [ ] Complete CI clean-install and uninstall tests on Ubuntu 24.04 `amd64` and `arm64` runners. The matrix is now configured; keep this item open until both jobs pass.
 - [ ] Verify uninstall and reinstall behaviour on disposable test hosts.
 - [ ] Confirm GHCR contains the expected multi-platform image for the release tag.
+- [ ] Push tag `v1.1.2` after the merge to trigger the release workflow; then verify the multi-platform GHCR image and GitHub Release assets.
 - [ ] Publish a new stable release only after the checks above pass.
 
 ## First public outreach
